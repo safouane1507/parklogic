@@ -62,6 +62,17 @@ public:
     Log(Level::Error, std::format(fmt, std::forward<Args>(args)...));
   }
 
+  /**
+   * @brief Logs a warning message with formatting.
+   *
+   * @tparam Args Variadic template arguments for formatting.
+   * @param fmt The format string.
+   * @param args The arguments to format.
+   */
+  template <typename... Args> static void Warn(std::format_string<Args...> fmt, Args &&...args) {
+    Log(Level::Warning, std::format(fmt, std::forward<Args>(args)...));
+  }
+
 private:
   static inline std::mutex mutex; ///< Mutex for thread safety.
 };

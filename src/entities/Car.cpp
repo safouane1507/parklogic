@@ -1,5 +1,6 @@
 #include "entities/Car.hpp"
-#include "entities/World.hpp"
+#include "config.hpp"
+#include "entities/map/World.hpp"
 #include "raymath.h"
 #include <memory>
 #include <vector>
@@ -7,11 +8,12 @@
 /**
  * @brief Constructs a new Car object.
  *
- * @param startPos The initial position of the car.
+ * @param startPos The initial position of the car (in meters).
  * @param world Pointer to the world environment for boundary checking.
  */
 Car::Car(Vector2 startPos, const World *world)
-    : position(startPos), velocity{0, 0}, acceleration{0, 0}, world(world), maxSpeed(300.0f), maxForce(800.0f) {}
+    : position(startPos), velocity{0, 0}, acceleration{0, 0}, world(world), maxSpeed(15.0f), maxForce(40.0f) {
+} // 15 m/s (~54 km/h), 40 m/s^2 force
 
 /**
  * @brief Updates the car's state based on time elapsed, without considering neighbors.
@@ -30,20 +32,21 @@ void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>>
   // --- Waypoint Logic: Generate a new random waypoint if none exist ---
   if (waypoints.empty()) {
     if (world) {
-      float dist = (float)GetRandomValue(300, 500);
+      // Random target in meters
+      float dist = (float)GetRandomValue(15, 25); // 15-25 meters away
       float angle = (float)GetRandomValue(0, 360) * DEG2RAD;
       Vector2 offset = {cosf(angle) * dist, sinf(angle) * dist};
       Vector2 nextPoint = Vector2Add(position, offset);
 
-      // Clamp waypoint to stay within world bounds (with a 50px margin)
-      if (nextPoint.x < 50)
-        nextPoint.x = 50;
-      if (nextPoint.y < 50)
-        nextPoint.y = 50;
-      if (nextPoint.x > world->getWidth() - 50)
-        nextPoint.x = world->getWidth() - 50;
-      if (nextPoint.y > world->getHeight() - 50)
-        nextPoint.y = world->getHeight() - 50;
+      // Clamp waypoint to stay within world bounds (with a 2.5m margin)
+      if (nextPoint.x < 2.5f)
+        nextPoint.x = 2.5f;
+      if (nextPoint.y < 2.5f)
+        nextPoint.y = 2.5f;
+      if (nextPoint.x > world->getWidth() - 2.5f)
+        nextPoint.x = world->getWidth() - 2.5f;
+      if (nextPoint.y > world->getHeight() - 2.5f)
+        nextPoint.y = world->getHeight() - 2.5f;
 
       addWaypoint(nextPoint);
     }
@@ -54,8 +57,8 @@ void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>>
     Vector2 target = waypoints.front();
     seek(target);
 
-    // If close enough to the target, move to the next waypoint
-    if (Vector2Distance(position, target) < 50.0f) {
+    // If close enough to the target (2.5m), move to the next waypoint
+    if (Vector2Distance(position, target) < 2.5f) {
       waypoints.pop_front();
     }
   } else {
@@ -71,12 +74,12 @@ void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>>
 
       float dist = Vector2Distance(position, other->getPosition());
 
-      // If a car is within the detection range, apply avoidance forces
-      if (dist < 70.0f) {
+      // If a car is within the detection range (3.5m), apply avoidance forces
+      if (dist < 3.5f) {
         // 1. Apply Braking (Force opposite to current velocity)
-        if (Vector2Length(velocity) > 10.0f) {
+        if (Vector2Length(velocity) > 0.5f) {
           Vector2 heading = Vector2Normalize(velocity);
-          float brakingStrength = 600.0f;
+          float brakingStrength = 30.0f;
           Vector2 brakingForce = Vector2Scale(heading, -brakingStrength);
           applyForce(brakingForce);
         }
@@ -86,7 +89,7 @@ void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>>
         push = Vector2Normalize(push);
 
         // Strength of the push increases as distance decreases
-        float pushStrength = 500.0f * (1.0f - (dist / 70.0f));
+        float pushStrength = 25.0f * (1.0f - (dist / 3.5f));
         applyForce(Vector2Scale(push, pushStrength));
       }
     }
@@ -112,31 +115,45 @@ void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>>
  * @brief Draws the car, its velocity vector, and its current waypoints.
  */
 void Car::draw() {
-  // Draw Waypoints and paths
+  // Draw Waypoints and paths (Scaled by PPM)
   if (!waypoints.empty()) {
     for (size_t i = 0; i < waypoints.size(); ++i) {
-      DrawCircleV(waypoints[i], 5, Fade(BLUE, 0.5f));
+      Vector2 wpScreen = Vector2Scale(waypoints[i], Config::PPM);
+      // Radius: 0.25 meters
+      DrawCircleV(wpScreen, 0.25f * Config::PPM, Fade(BLUE, 0.5f));
       if (i > 0) {
-        DrawLineV(waypoints[i - 1], waypoints[i], Fade(BLUE, 0.3f));
+        Vector2 prevWpScreen = Vector2Scale(waypoints[i - 1], Config::PPM);
+        DrawLineV(prevWpScreen, wpScreen, Fade(BLUE, 0.3f));
       } else {
-        DrawLineV(position, waypoints[i], Fade(BLUE, 0.3f));
+        Vector2 posScreen = Vector2Scale(position, Config::PPM);
+        DrawLineV(posScreen, wpScreen, Fade(BLUE, 0.3f));
       }
     }
   }
 
-  // Draw Car rectangle
+  // Draw Car rectangle (Scaled by PPM)
+  // Car size: 4.5m x 1.8m
+  float width = 4.5f * Config::PPM;
+  float height = 1.8f * Config::PPM;
+
   float rotation = atan2f(velocity.y, velocity.x) * RAD2DEG;
-  Rectangle carRect = {position.x, position.y, 40, 20};
-  DrawRectanglePro(carRect, {20, 10}, rotation, RED);
+
+  Vector2 posScreen = Vector2Scale(position, Config::PPM);
+
+  Rectangle carRect = {posScreen.x, posScreen.y, width, height};
+  // Origin is center of car
+  DrawRectanglePro(carRect, {width / 2, height / 2}, rotation, RED);
 
   // Draw velocity vector (heading)
-  DrawLineV(position, Vector2Add(position, Vector2Scale(velocity, 0.5f)), GREEN);
+  Vector2 velEnd =
+      Vector2Add(posScreen, Vector2Scale(velocity, Config::PPM * 0.5f)); // Scale velocity for visualization
+  DrawLineV(posScreen, velEnd, GREEN);
 }
 
 /**
  * @brief Adds a point to the list of waypoints the car should follow.
  *
- * @param point The new waypoint coordinates.
+ * @param point The new waypoint coordinates (in meters).
  */
 void Car::addWaypoint(Vector2 point) { waypoints.push_back(point); }
 

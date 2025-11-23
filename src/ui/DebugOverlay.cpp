@@ -1,5 +1,6 @@
 #include "ui/DebugOverlay.hpp"
 #include "config.hpp"
+#include "raymath.h"
 #include "scenes/GameScene.hpp"
 #include <format>
 
@@ -32,7 +33,10 @@ void DebugOverlay::draw() {
 
   const auto &camera = scene->getCamera();
   lines.push_back(DebugLine{std::format("Zoom: {:.2f}", camera.zoom), WHITE});
-  lines.push_back(DebugLine{std::format("Cam Target: {:.0f}, {:.0f}", camera.target.x, camera.target.y), WHITE});
+  // Show Camera Target in Meters
+  lines.push_back(DebugLine{
+      std::format("Cam Target (m): {:.1f}, {:.1f}", camera.target.x / Config::PPM, camera.target.y / Config::PPM),
+      WHITE});
 
   lines.push_back(DebugLine{std::format("Listeners: {}", scene->getListenerCount()), YELLOW});
 
@@ -45,8 +49,15 @@ void DebugOverlay::draw() {
                     (GetScreenHeight() - Config::LOGICAL_HEIGHT * scale) * 0.5f};
   Vector2 logical = {(mouse.x - offset.x) / scale, (mouse.y - offset.y) / scale};
 
+  // Convert Logical to World (Meters)
+  // WorldPixel = (Logical - CameraOffset) / Zoom + CameraTarget
+  // WorldMeter = WorldPixel / PPM
+  Vector2 worldPixel =
+      Vector2Add(Vector2Scale(Vector2Subtract(logical, camera.offset), 1.0f / camera.zoom), camera.target);
+  Vector2 worldMeter = Vector2Scale(worldPixel, 1.0f / Config::PPM);
+
   lines.push_back(DebugLine{std::format("Mouse Raw: {:.0f},{:.0f}", mouse.x, mouse.y), YELLOW});
-  lines.push_back(DebugLine{std::format("Mouse Log: {:.0f},{:.0f}", logical.x, logical.y), YELLOW});
+  lines.push_back(DebugLine{std::format("Mouse World (m): {:.1f},{:.1f}", worldMeter.x, worldMeter.y), YELLOW});
 
   // Calculate dimensions
   int maxWidth = 0;

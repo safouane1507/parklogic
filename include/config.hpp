@@ -6,6 +6,7 @@ constexpr const char *WINDOW_TITLE = "Raylib Engine C++20"; ///< Window Title
 // Logical Resolution (Render Texture Size)
 constexpr int LOGICAL_WIDTH = 1280; ///< Internal resolution width
 constexpr int LOGICAL_HEIGHT = 720; ///< Internal resolution height
+constexpr float PPM = 20.0f;        // Pixels Per Meter
 
 // Physical Window Start Size
 constexpr int INITIAL_WINDOW_WIDTH = 1280; ///< Initial window width
