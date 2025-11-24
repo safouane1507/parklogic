@@ -29,36 +29,14 @@ void Car::update(double dt) { updateWithNeighbors(dt, nullptr); }
  * @param cars A pointer to the list of all cars in the scene, used for collision avoidance (can be nullptr).
  */
 void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>> *cars) {
-  // --- Waypoint Logic: Generate a new random waypoint if none exist ---
-  if (waypoints.empty()) {
-    if (world) {
-      // Random target in meters
-      float dist = (float)GetRandomValue(15, 25); // 15-25 meters away
-      float angle = (float)GetRandomValue(0, 360) * DEG2RAD;
-      Vector2 offset = {cosf(angle) * dist, sinf(angle) * dist};
-      Vector2 nextPoint = Vector2Add(position, offset);
-
-      // Clamp waypoint to stay within world bounds (with a 2.5m margin)
-      if (nextPoint.x < 2.5f)
-        nextPoint.x = 2.5f;
-      if (nextPoint.y < 2.5f)
-        nextPoint.y = 2.5f;
-      if (nextPoint.x > world->getWidth() - 2.5f)
-        nextPoint.x = world->getWidth() - 2.5f;
-      if (nextPoint.y > world->getHeight() - 2.5f)
-        nextPoint.y = world->getHeight() - 2.5f;
-
-      addWaypoint(nextPoint);
-    }
-  }
-
   // --- Steering Behavior (Seek) ---
   if (!waypoints.empty()) {
-    Vector2 target = waypoints.front();
+    Waypoint& currentWp = waypoints.front();
+    Vector2 target = currentWp.position;
     seek(target);
 
-    // If close enough to the target (2.5m), move to the next waypoint
-    if (Vector2Distance(position, target) < 2.5f) {
+    // Check if reached (using waypoint's tolerance)
+    if (Vector2Distance(position, target) < currentWp.tolerance) {
       waypoints.pop_front();
     }
   } else {
@@ -114,48 +92,55 @@ void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>>
 /**
  * @brief Draws the car, its velocity vector, and its current waypoints.
  */
+/**
+ * @brief Draws the car, its velocity vector, and its current waypoints.
+ */
 void Car::draw() {
-  // Draw Waypoints and paths (Scaled by PPM)
+  // Draw Waypoints and paths (in Meters)
   if (!waypoints.empty()) {
     for (size_t i = 0; i < waypoints.size(); ++i) {
-      Vector2 wpScreen = Vector2Scale(waypoints[i], Config::PPM);
+      Vector2 wpPos = waypoints[i].position;
       // Radius: 0.25 meters
-      DrawCircleV(wpScreen, 0.25f * Config::PPM, Fade(BLUE, 0.5f));
+      DrawCircleV(wpPos, 0.25f, Fade(BLUE, 0.5f));
       if (i > 0) {
-        Vector2 prevWpScreen = Vector2Scale(waypoints[i - 1], Config::PPM);
-        DrawLineV(prevWpScreen, wpScreen, Fade(BLUE, 0.3f));
+        Vector2 prevWpPos = waypoints[i - 1].position;
+        DrawLineV(prevWpPos, wpPos, Fade(BLUE, 0.3f));
       } else {
-        Vector2 posScreen = Vector2Scale(position, Config::PPM);
-        DrawLineV(posScreen, wpScreen, Fade(BLUE, 0.3f));
+        DrawLineV(position, wpPos, Fade(BLUE, 0.3f));
       }
     }
   }
 
-  // Draw Car rectangle (Scaled by PPM)
+  // Draw Car rectangle (in Meters)
   // Car size: 4.5m x 1.8m
-  float width = 4.5f * Config::PPM;
-  float height = 1.8f * Config::PPM;
+  float width = 4.5f;
+  float height = 1.8f;
 
   float rotation = atan2f(velocity.y, velocity.x) * RAD2DEG;
 
-  Vector2 posScreen = Vector2Scale(position, Config::PPM);
-
-  Rectangle carRect = {posScreen.x, posScreen.y, width, height};
+  Rectangle carRect = {position.x, position.y, width, height};
   // Origin is center of car
   DrawRectanglePro(carRect, {width / 2, height / 2}, rotation, RED);
 
   // Draw velocity vector (heading)
   Vector2 velEnd =
-      Vector2Add(posScreen, Vector2Scale(velocity, Config::PPM * 0.5f)); // Scale velocity for visualization
-  DrawLineV(posScreen, velEnd, GREEN);
+      Vector2Add(position, Vector2Scale(velocity, 0.5f)); // Scale velocity for visualization
+  DrawLineV(position, velEnd, GREEN);
 }
 
 /**
  * @brief Adds a point to the list of waypoints the car should follow.
  *
- * @param point The new waypoint coordinates (in meters).
+ * @param wp The new waypoint.
  */
-void Car::addWaypoint(Vector2 point) { waypoints.push_back(point); }
+void Car::addWaypoint(Waypoint wp) { waypoints.push_back(wp); }
+
+void Car::setPath(const std::vector<Waypoint>& path) {
+    waypoints.clear();
+    for(const auto& wp : path) {
+        waypoints.push_back(wp);
+    }
+}
 
 /**
  * @brief Clears all current waypoints.

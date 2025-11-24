@@ -1,5 +1,5 @@
 #pragma once
-#include "entities/map/Module.hpp"
+#include "entities/map/Modules.hpp"
 #include "entities/map/World.hpp"
 #include <memory>
 #include <vector>

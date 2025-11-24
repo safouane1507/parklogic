@@ -1,7 +1,8 @@
 #pragma once
 #include "core/EventBus.hpp"
-#include "entities/map/Module.hpp"
+#include "entities/map/Modules.hpp"
 #include "entities/map/World.hpp"
+#include "entities/Car.hpp"
 #include "scenes/IScene.hpp"
 #include "ui/UIManager.hpp"
 #include <memory>
@@ -29,6 +30,7 @@ private:
 
   std::unique_ptr<World> world;
   std::vector<std::unique_ptr<Module>> modules;
+  std::vector<std::unique_ptr<Car>> cars;
 
   Camera2D camera = {};
   UIManager ui;

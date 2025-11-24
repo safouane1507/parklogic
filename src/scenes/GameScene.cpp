@@ -1,10 +1,12 @@
 #include "scenes/GameScene.hpp"
 #include "config.hpp"
 #include "core/Logger.hpp"
+#include "entities/map/Modules.hpp"
 #include "entities/map/WorldGenerator.hpp"
 #include "events/GameEvents.hpp"
 #include "events/InputEvents.hpp"
 #include "ui/DebugOverlay.hpp"
+#include "ui/UIButton.hpp"
 #include <format>
 
 GameScene::GameScene(std::shared_ptr<EventBus> bus) : eventBus(bus) {}
@@ -22,11 +24,19 @@ void GameScene::load() {
   // Setup UI
   ui.add(std::make_shared<DebugOverlay>(eventBus));
 
+  // Spawn Car Button
+  // UIButton constructor takes (pos, size, text, bus)
+  // We need to set the callback separately
+  auto spawnBtn = std::make_shared<UIButton>(Vector2{10, 100}, Vector2{150, 40}, "Spawn Car", eventBus);
+
+  spawnBtn->setOnClick([this]() { eventBus->publish(SpawnCarEvent{}); });
+  ui.add(spawnBtn);
+
   // Setup Camera
-  camera.zoom = 1.0f; // Default zoom
-  // Center camera on the middle of the world (in pixels)
+  camera.zoom = 1.0f; // Default zoom (1.0 = Config::PPM pixels per meter)
+  // Center camera on the middle of the world (in meters)
   if (world) {
-    camera.target = {(world->getWidth() * Config::PPM) / 2.0f, (world->getHeight() * Config::PPM) / 2.0f};
+    camera.target = {world->getWidth() / 2.0f, world->getHeight() / 2.0f};
   } else {
     camera.target = {0, 0};
   }
@@ -62,18 +72,93 @@ void GameScene::load() {
     if (camera.zoom > 5.0f)
       camera.zoom = 5.0f;
   }));
+
+  // 1. Handle Spawn Request
+  eventTokens.push_back(eventBus->subscribe<SpawnCarEvent>([this](const SpawnCarEvent &) {
+    Logger::Info("SpawnCarEvent received. Spawning car entity...");
+
+    // Find a valid start position (Road)
+    Vector2 spawnPos = {0, 0};
+    for (const auto &mod : modules) {
+      if (auto *r = dynamic_cast<NormalRoad *>(mod.get())) {
+        std::vector<Waypoint> wps = r->getGlobalWaypoints();
+        if (!wps.empty())
+          spawnPos = wps[0].position;
+        else
+          spawnPos = r->worldPosition;
+        break;
+      }
+    }
+
+    auto car = std::make_unique<Car>(spawnPos, world.get());
+    Car *carPtr = car.get();
+    cars.push_back(std::move(car));
+
+    // Notify that a car has spawned
+    eventBus->publish(CarSpawnedEvent{carPtr});
+  }));
+
+  // 2. Handle Path Assignment (Map Logic)
+  eventTokens.push_back(eventBus->subscribe<CarSpawnedEvent>([this](const CarSpawnedEvent &e) {
+    Logger::Info("CarSpawnedEvent received. Calculating path...");
+
+    // Logic to find path (Road -> Junction -> Facility)
+    NormalRoad *startRoad = nullptr;
+    Module *junction = nullptr;
+    Module *facility = nullptr;
+
+    for (const auto &mod : modules) {
+      if (!startRoad && dynamic_cast<NormalRoad *>(mod.get()))
+        startRoad = dynamic_cast<NormalRoad *>(mod.get());
+      if (!junction && (dynamic_cast<UpEntranceRoad *>(mod.get()) || dynamic_cast<DownEntranceRoad *>(mod.get()) ||
+                        dynamic_cast<DoubleEntranceRoad *>(mod.get())))
+        junction = mod.get();
+      if (!facility && (dynamic_cast<SmallParking *>(mod.get()) || dynamic_cast<LargeParking *>(mod.get())))
+        facility = mod.get();
+    }
+
+    if (startRoad && junction && facility) {
+      std::vector<Waypoint> path;
+
+      // Start Road
+      auto startWps = startRoad->getGlobalWaypoints();
+      path.insert(path.end(), startWps.begin(), startWps.end());
+
+      // Junction
+      auto juncWps = junction->getGlobalWaypoints();
+      path.insert(path.end(), juncWps.begin(), juncWps.end());
+
+      // Facility
+      auto facWps = facility->getGlobalWaypoints();
+      path.insert(path.end(), facWps.begin(), facWps.end());
+
+      // Publish Path Assignment
+      eventBus->publish(AssignPathEvent{e.car, path});
+    } else {
+      Logger::Error("Failed to generate path for spawned car.");
+    }
+  }));
+
+  // 3. Apply Path to Car
+  eventTokens.push_back(eventBus->subscribe<AssignPathEvent>([](const AssignPathEvent &e) {
+    Logger::Info("AssignPathEvent received. Setting path for car.");
+    if (e.car) {
+      e.car->setPath(e.path);
+    }
+  }));
 }
 
 void GameScene::unload() {
   world.reset();
   modules.clear();
+  cars.clear();
   eventTokens.clear();
 }
 
 void GameScene::handleInput(double dt) {
-  // Camera Movement Speed (in pixels/sec)
+  // Camera Movement Speed (in meters/sec)
   // Let's say we want to move 20 meters per second
-  float speed = 20.0f * Config::PPM / camera.zoom;
+  float speed = 20.0f / camera.zoom;
 
   if (keysDown.contains(KEY_W))
     camera.target.y -= speed * dt;
@@ -94,10 +179,10 @@ void GameScene::handleInput(double dt) {
   if (camera.zoom > 5.0f)
     camera.zoom = 5.0f;
 
-  // Clamp Camera Target to World Bounds (in pixels)
+  // Clamp Camera Target to World Bounds (in meters)
   if (world) {
-    float worldW = world->getWidth() * Config::PPM;
-    float worldH = world->getHeight() * Config::PPM;
+    float worldW = world->getWidth();
+    float worldH = world->getHeight();
 
     if (camera.target.x < 0)
       camera.target.x = 0;
@@ -117,11 +202,19 @@ void GameScene::update(double dt) {
   if (!isPaused) {
     if (world)
       world->update(dt);
+
+    for (auto &car : cars) {
+      car->updateWithNeighbors(dt, &cars);
+    }
   }
 }
 
 void GameScene::draw() {
-  BeginMode2D(camera);
+  // Create a render camera that applies the PPM scaling
+  Camera2D renderCamera = camera;
+  renderCamera.zoom = camera.zoom * Config::PPM;
+
+  BeginMode2D(renderCamera);
   ClearBackground(RAYWHITE);
 
   if (world)
@@ -129,6 +222,10 @@ void GameScene::draw() {
 
   for (const auto &mod : modules) {
     mod->draw();
+  }
+
+  for (const auto &car : cars) {
+    car->draw();
   }
 
   EndMode2D();

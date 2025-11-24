@@ -1,5 +1,4 @@
 #include "entities/map/World.hpp"
-#include "config.hpp"
 #include "raylib.h"
 
 World::World(float width, float height) : width(width), height(height), showGrid(true) {}
@@ -9,21 +8,20 @@ void World::update(double /*dt*/) {
 }
 
 void World::draw() {
-  // Draw World Boundary
-  DrawRectangleLines(0, 0, static_cast<int>(width * Config::PPM), static_cast<int>(height * Config::PPM), BLACK);
+  // Draw World Boundary (in Meters)
+  // Use DrawRectangleLinesEx for float thickness (e.g., 0.1m)
+  DrawRectangleLinesEx({0, 0, width, height}, 0.1f, BLACK);
 
   // Draw Grid
   if (showGrid) {
     // Grid lines every 1 meter
-    int spacing = static_cast<int>(Config::PPM);
-    int w = static_cast<int>(width * Config::PPM);
-    int h = static_cast<int>(height * Config::PPM);
+    float spacing = 1.0f;
 
-    for (int x = 0; x <= w; x += spacing) {
-      DrawLine(x, 0, x, h, Fade(LIGHTGRAY, 0.5f));
+    for (float x = 0; x <= width; x += spacing) {
+      DrawLineV({x, 0}, {x, height}, Fade(LIGHTGRAY, 0.5f));
     }
-    for (int y = 0; y <= h; y += spacing) {
-      DrawLine(0, y, w, y, Fade(LIGHTGRAY, 0.5f));
+    for (float y = 0; y <= height; y += spacing) {
+      DrawLineV({0, y}, {width, y}, Fade(LIGHTGRAY, 0.5f));
     }
   }
 }

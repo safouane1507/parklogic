@@ -14,6 +14,8 @@ class World;
  * The Car class implements steering behaviors (seek) to navigate through waypoints.
  * It supports collision avoidance and dynamic waypoint generation.
  */
+#include "entities/map/Waypoint.hpp"
+
 class Car : public Entity {
 public:
   /**
@@ -47,9 +49,16 @@ public:
   /**
    * @brief Adds a waypoint to the car's path.
    *
-   * @param point The target position.
+   * @param wp The target waypoint.
    */
-  void addWaypoint(Vector2 point);
+  void addWaypoint(Waypoint wp);
+
+  /**
+   * @brief Sets the entire path of waypoints.
+   * 
+   * @param path Vector of waypoints.
+   */
+  void setPath(const std::vector<Waypoint>& path);
 
   /**
    * @brief Clears all waypoints.
@@ -68,7 +77,7 @@ private:
   float maxSpeed;
   float maxForce;
 
-  std::deque<Vector2> waypoints;
+  std::deque<Waypoint> waypoints;
 
   /**
    * @brief Applies a force to the car's acceleration.
