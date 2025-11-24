@@ -1,13 +1,18 @@
 #include "ui/DebugOverlay.hpp"
-#include "config.hpp"
-#include "raymath.h"
-#include "scenes/GameScene.hpp"
+#include "events/GameEvents.hpp"
+#include "events/InputEvents.hpp"
 #include <format>
 
-DebugOverlay::DebugOverlay(GameScene *scene, std::shared_ptr<EventBus> bus)
-    : UIElement({10, 10}, {0, 0}, bus), scene(scene) {
-  // Default to hidden, toggled by F1 in GameScene
+DebugOverlay::DebugOverlay(std::shared_ptr<EventBus> bus) : UIElement({10, 10}, {0, 0}, bus) {
+  // Default to hidden, toggled by Event
   visible = false;
+
+  toggleEventToken = bus->subscribe<KeyPressedEvent>([this](const KeyPressedEvent &e) {
+    if (e.key == KEY_F3) {
+      visible = !visible;
+      eventBus->publish(ToggleDebugOverlayEvent{visible});
+    }
+  });
 }
 
 void DebugOverlay::update(double /*dt*/) {
@@ -31,34 +36,6 @@ void DebugOverlay::draw() {
 
   lines.push_back(DebugLine{std::format("FPS: {}", GetFPS()), LIME});
 
-  const auto &camera = scene->getCamera();
-  lines.push_back(DebugLine{std::format("Zoom: {:.2f}", camera.zoom), WHITE});
-  // Show Camera Target in Meters
-  lines.push_back(DebugLine{
-      std::format("Cam Target (m): {:.1f}, {:.1f}", camera.target.x / Config::PPM, camera.target.y / Config::PPM),
-      WHITE});
-
-  lines.push_back(DebugLine{std::format("Listeners: {}", scene->getListenerCount()), YELLOW});
-
-  // Get Mouse Info
-  Vector2 mouse = GetMousePosition();
-  // Recalculate logical for display
-  float scale =
-      std::min((float)GetScreenWidth() / Config::LOGICAL_WIDTH, (float)GetScreenHeight() / Config::LOGICAL_HEIGHT);
-  Vector2 offset = {(GetScreenWidth() - Config::LOGICAL_WIDTH * scale) * 0.5f,
-                    (GetScreenHeight() - Config::LOGICAL_HEIGHT * scale) * 0.5f};
-  Vector2 logical = {(mouse.x - offset.x) / scale, (mouse.y - offset.y) / scale};
-
-  // Convert Logical to World (Meters)
-  // WorldPixel = (Logical - CameraOffset) / Zoom + CameraTarget
-  // WorldMeter = WorldPixel / PPM
-  Vector2 worldPixel =
-      Vector2Add(Vector2Scale(Vector2Subtract(logical, camera.offset), 1.0f / camera.zoom), camera.target);
-  Vector2 worldMeter = Vector2Scale(worldPixel, 1.0f / Config::PPM);
-
-  lines.push_back(DebugLine{std::format("Mouse Raw: {:.0f},{:.0f}", mouse.x, mouse.y), YELLOW});
-  lines.push_back(DebugLine{std::format("Mouse World (m): {:.1f},{:.1f}", worldMeter.x, worldMeter.y), YELLOW});
-
   // Calculate dimensions
   int maxWidth = 0;
   for (const auto &line : lines) {
@@ -72,7 +49,6 @@ void DebugOverlay::draw() {
   int paddingY = 10;
 
   // Draw Background
-  // Using -5 offset as in original code for top-left
   DrawRectangle(x - 5, y - 5, maxWidth + paddingX * 2, totalHeight + paddingY, Fade(BLACK, 0.8f));
 
   // Draw Text

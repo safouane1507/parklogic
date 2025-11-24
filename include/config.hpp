@@ -1,7 +1,7 @@
 #pragma once
 
 namespace Config {
-constexpr const char *WINDOW_TITLE = "Raylib Engine C++20"; ///< Window Title
+constexpr const char *WINDOW_TITLE = "ParkLogic"; ///< Window Title
 
 // Logical Resolution (Render Texture Size)
 constexpr int LOGICAL_WIDTH = 1280; ///< Internal resolution width

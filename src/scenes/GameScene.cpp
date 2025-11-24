@@ -4,6 +4,7 @@
 #include "entities/map/WorldGenerator.hpp"
 #include "events/GameEvents.hpp"
 #include "events/InputEvents.hpp"
+#include "ui/DebugOverlay.hpp"
 #include <format>
 
 GameScene::GameScene(std::shared_ptr<EventBus> bus) : eventBus(bus) {}
@@ -17,6 +18,9 @@ void GameScene::load() {
   auto generated = WorldGenerator::generate();
   world = std::move(generated.world);
   modules = std::move(generated.modules);
+
+  // Setup UI
+  ui.add(std::make_shared<DebugOverlay>(eventBus));
 
   // Setup Camera
   camera.zoom = 1.0f; // Default zoom
@@ -37,12 +41,27 @@ void GameScene::load() {
       eventBus->publish(SceneChangeEvent{SceneType::MainMenu});
     }
     if (e.key == KEY_P) {
-      isPaused = !isPaused;
+      if (isPaused) {
+        eventBus->publish(GameResumedEvent{});
+      } else {
+        eventBus->publish(GamePausedEvent{});
+      }
     }
   }));
 
   eventTokens.push_back(
       eventBus->subscribe<KeyReleasedEvent>([this](const KeyReleasedEvent &e) { keysDown.erase(e.key); }));
+
+  eventTokens.push_back(eventBus->subscribe<GamePausedEvent>([this](const GamePausedEvent &) { isPaused = true; }));
+  eventTokens.push_back(eventBus->subscribe<GameResumedEvent>([this](const GameResumedEvent &) { isPaused = false; }));
+
+  eventTokens.push_back(eventBus->subscribe<CameraZoomEvent>([this](const CameraZoomEvent &e) {
+    camera.zoom += e.zoomDelta;
+    if (camera.zoom < 0.1f)
+      camera.zoom = 0.1f;
+    if (camera.zoom > 5.0f)
+      camera.zoom = 5.0f;
+  }));
 }
 
 void GameScene::unload() {
@@ -66,8 +85,9 @@ void GameScene::handleInput(double dt) {
     camera.target.x += speed * dt;
 
   float wheel = GetMouseWheelMove();
-  if (wheel != 0)
-    camera.zoom += wheel * 0.1f;
+  if (wheel != 0) {
+    eventBus->publish(CameraZoomEvent{wheel * 0.1f});
+  }
 
   if (camera.zoom < 0.1f)
     camera.zoom = 0.1f;
@@ -97,7 +117,6 @@ void GameScene::update(double dt) {
   if (!isPaused) {
     if (world)
       world->update(dt);
-    // Update modules if they had update logic
   }
 }
 

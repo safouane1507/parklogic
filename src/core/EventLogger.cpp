@@ -26,10 +26,6 @@ EventLogger::EventLogger(std::shared_ptr<EventBus> bus) : eventBus(bus) {
   subscriptions.push_back(
       eventBus->subscribe<GameResumedEvent>([](const GameResumedEvent &) { Logger::Info("Event: GameResumedEvent"); }));
 
-  subscriptions.push_back(eventBus->subscribe<BallBounceEvent>([](const BallBounceEvent &e) {
-    Logger::Info("Event: BallBounceEvent [x: {}, y: {}]", e.position.x, e.position.y);
-  }));
-
   subscriptions.push_back(eventBus->subscribe<MouseClickEvent>([](const MouseClickEvent &e) {
     Logger::Info("Event: MouseClickEvent [Button: {}, x: {}, y: {}, Down: {}]", e.button, e.position.x, e.position.y,
                  e.down);
@@ -41,4 +37,11 @@ EventLogger::EventLogger(std::shared_ptr<EventBus> bus) : eventBus(bus) {
 
   subscriptions.push_back(
       eventBus->subscribe<WindowCloseEvent>([](const WindowCloseEvent &) { Logger::Info("Event: WindowCloseEvent"); }));
+
+  subscriptions.push_back(eventBus->subscribe<ToggleDebugOverlayEvent>([](const ToggleDebugOverlayEvent &e) {
+    Logger::Info("Event: ToggleDebugOverlayEvent [Enabled: {}]", e.enabled);
+  }));
+
+  subscriptions.push_back(eventBus->subscribe<CameraZoomEvent>(
+      [](const CameraZoomEvent &e) { Logger::Info("Event: CameraZoomEvent [Delta: {}]", e.zoomDelta); }));
 }
