@@ -25,6 +25,12 @@ public:
   void draw() override;
 
   /**
+   * @brief Sets the button text.
+   * @param text The new text to display.
+   */
+  void setText(const std::string &text);
+
+  /**
    * @brief Sets the callback function to execute on click.
    * @param cb The callback function.
    */

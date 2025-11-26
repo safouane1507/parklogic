@@ -9,7 +9,7 @@
 #include "ui/UIButton.hpp"
 #include <format>
 
-GameScene::GameScene(std::shared_ptr<EventBus> bus) : eventBus(bus) {}
+GameScene::GameScene(std::shared_ptr<EventBus> bus, MapConfig config) : eventBus(bus), config(config) {}
 
 GameScene::~GameScene() { Logger::Info("GameScene Destroyed"); }
 
@@ -17,7 +17,7 @@ void GameScene::load() {
   Logger::Info("Loading GameScene (Generated World)...");
 
   // Generate World
-  auto generated = WorldGenerator::generate();
+  auto generated = WorldGenerator::generate(config);
   world = std::move(generated.world);
   modules = std::move(generated.modules);
 
@@ -48,7 +48,7 @@ void GameScene::load() {
     keysDown.insert(e.key);
     if (e.key == KEY_ESCAPE) {
       Logger::Info("Switching to MainMenu");
-      eventBus->publish(SceneChangeEvent{SceneType::MainMenu});
+      eventBus->publish(SceneChangeEvent{SceneType::MainMenu, {}});
     }
     if (e.key == KEY_P) {
       if (isPaused) {
@@ -102,41 +102,28 @@ void GameScene::load() {
   eventTokens.push_back(eventBus->subscribe<CarSpawnedEvent>([this](const CarSpawnedEvent &e) {
     Logger::Info("CarSpawnedEvent received. Calculating path...");
 
-    // Logic to find path (Road -> Junction -> Facility)
-    NormalRoad *startRoad = nullptr;
-    Module *junction = nullptr;
-    Module *facility = nullptr;
-
+    std::vector<Module *> facilities;
     for (const auto &mod : modules) {
-      if (!startRoad && dynamic_cast<NormalRoad *>(mod.get()))
-        startRoad = dynamic_cast<NormalRoad *>(mod.get());
-      if (!junction && (dynamic_cast<UpEntranceRoad *>(mod.get()) || dynamic_cast<DownEntranceRoad *>(mod.get()) ||
-                        dynamic_cast<DoubleEntranceRoad *>(mod.get())))
-        junction = mod.get();
-      if (!facility && (dynamic_cast<SmallParking *>(mod.get()) || dynamic_cast<LargeParking *>(mod.get())))
-        facility = mod.get();
+      if (dynamic_cast<SmallParking *>(mod.get()) || dynamic_cast<LargeParking *>(mod.get()) ||
+          dynamic_cast<SmallChargingStation *>(mod.get()) || dynamic_cast<LargeChargingStation *>(mod.get())) {
+        facilities.push_back(mod.get());
+      }
     }
 
-    if (startRoad && junction && facility) {
-      std::vector<Waypoint> path;
-
-      // Start Road
-      auto startWps = startRoad->getGlobalWaypoints();
-      path.insert(path.end(), startWps.begin(), startWps.end());
-
-      // Junction
-      auto juncWps = junction->getGlobalWaypoints();
-      path.insert(path.end(), juncWps.begin(), juncWps.end());
-
-      // Facility
-      auto facWps = facility->getGlobalWaypoints();
-      path.insert(path.end(), facWps.begin(), facWps.end());
-
-      // Publish Path Assignment
-      eventBus->publish(AssignPathEvent{e.car, path});
-    } else {
-      Logger::Error("Failed to generate path for spawned car.");
+    if (facilities.empty()) {
+      Logger::Error("No facilities found to assign path.");
+      return;
     }
+
+    // Pick random facility
+    int idx = GetRandomValue(0, (int)facilities.size() - 1);
+    Module *targetFac = facilities[idx];
+
+    // Get Path from Facility (Recursive: Road -> Facility)
+    std::vector<Waypoint> path = targetFac->getPath();
+
+    // Publish Path Assignment
+    eventBus->publish(AssignPathEvent{e.car, path});
   }));
 
   // 3. Apply Path to Car

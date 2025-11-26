@@ -54,4 +54,5 @@ private:
 
   bool changeQueued = false;                 ///< Flag indicating a scene change is pending.
   SceneType nextScene = SceneType::MainMenu; ///< The next scene to load.
+  MapConfig nextConfig;
 };

@@ -2,9 +2,17 @@
 #include <vector>
 #include "entities/map/Waypoint.hpp"
 
-enum class SceneType { MainMenu, Game };
+struct MapConfig {
+  int smallParkingCount = 2;
+  int largeParkingCount = 2;
+  int smallChargingCount = 2;
+  int largeChargingCount = 2;
+};
+
+enum class SceneType { MainMenu, MapConfig, Game };
 struct SceneChangeEvent {
   SceneType newScene;
+  MapConfig config;
 };
 
 struct GamePausedEvent {};

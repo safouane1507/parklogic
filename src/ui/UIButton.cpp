@@ -40,6 +40,8 @@ UIButton::UIButton(Vector2 pos, Vector2 sz, const std::string &txt, std::shared_
   }));
 }
 
+void UIButton::setText(const std::string &text) { this->text = text; }
+
 void UIButton::setOnClick(std::function<void()> cb) { onClick = cb; }
 void UIButton::update(double) {}
 

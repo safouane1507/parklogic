@@ -1,5 +1,4 @@
 #include "entities/Car.hpp"
-#include "config.hpp"
 #include "entities/map/World.hpp"
 #include "raymath.h"
 #include <memory>
@@ -12,8 +11,8 @@
  * @param world Pointer to the world environment for boundary checking.
  */
 Car::Car(Vector2 startPos, const World *world)
-    : position(startPos), velocity{0, 0}, acceleration{0, 0}, world(world), maxSpeed(15.0f), maxForce(40.0f) {
-} // 15 m/s (~54 km/h), 40 m/s^2 force
+    : position(startPos), velocity{0, 0}, acceleration{0, 0}, world(world), maxSpeed(15.0f), maxForce(60.0f) {
+} // 15 m/s (~54 km/h), 60 m/s^2 force
 
 /**
  * @brief Updates the car's state based on time elapsed, without considering neighbors.
@@ -31,12 +30,12 @@ void Car::update(double dt) { updateWithNeighbors(dt, nullptr); }
 void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>> *cars) {
   // --- Steering Behavior (Seek) ---
   if (!waypoints.empty()) {
-    Waypoint& currentWp = waypoints.front();
-    Vector2 target = currentWp.position;
-    seek(target);
+    Waypoint &currentWp = waypoints.front();
+    // Vector2 target = currentWp.position;
+    seek(currentWp);
 
     // Check if reached (using waypoint's tolerance)
-    if (Vector2Distance(position, target) < currentWp.tolerance) {
+    if (Vector2Distance(position, currentWp.position) < currentWp.tolerance) {
       waypoints.pop_front();
     }
   } else {
@@ -123,8 +122,7 @@ void Car::draw() {
   DrawRectanglePro(carRect, {width / 2, height / 2}, rotation, RED);
 
   // Draw velocity vector (heading)
-  Vector2 velEnd =
-      Vector2Add(position, Vector2Scale(velocity, 0.5f)); // Scale velocity for visualization
+  Vector2 velEnd = Vector2Add(position, Vector2Scale(velocity, 0.5f)); // Scale velocity for visualization
   DrawLineV(position, velEnd, GREEN);
 }
 
@@ -135,11 +133,11 @@ void Car::draw() {
  */
 void Car::addWaypoint(Waypoint wp) { waypoints.push_back(wp); }
 
-void Car::setPath(const std::vector<Waypoint>& path) {
-    waypoints.clear();
-    for(const auto& wp : path) {
-        waypoints.push_back(wp);
-    }
+void Car::setPath(const std::vector<Waypoint> &path) {
+  waypoints.clear();
+  for (const auto &wp : path) {
+    waypoints.push_back(wp);
+  }
 }
 
 /**
@@ -159,10 +157,74 @@ void Car::applyForce(Vector2 force) { acceleration = Vector2Add(acceleration, fo
  *
  * @param target The target position to seek.
  */
-void Car::seek(Vector2 target) {
+void Car::seek(const Waypoint &wp) {
+  Vector2 target = wp.position;
   Vector2 desired = Vector2Subtract(target, position);
+  float dist = Vector2Length(desired);
   desired = Vector2Normalize(desired);
-  desired = Vector2Scale(desired, maxSpeed);
+
+  // Calculate angle between current velocity and desired direction
+  float currentAngle = atan2f(velocity.y, velocity.x);
+
+  // Use the waypoint's entry angle if provided (and not 0/default), otherwise use direction to target
+  // Actually, the user wants us to use the waypoint's turn angle info.
+  // If entryAngle is set, it means "we should be at this angle when we hit the waypoint".
+  // So we compare our current angle to that entry angle to decide if we need to slow down.
+
+  float targetAngle = wp.entryAngle;
+  // If entryAngle is 0, it might be uninitialized or actually 0.
+  // Let's assume if it's a significant turn, it will be set.
+  // But wait, we need to know the difference between current heading and the *next* leg's heading.
+  // The user said: "each waypoint carries the information of the turn angle so the car can slow down depending on the
+  // upcoming turn"
+
+  float angleDiff = 0.0f;
+
+  // If we have a specific entry angle for this waypoint (meaning a turn is expected)
+  // We compare our current heading with that angle.
+  // However, usually we want to slow down if the *next* turn is sharp.
+  // The waypoint we are seeking IS the turn point.
+  // So wp.entryAngle should represent the direction we need to be facing *after* the waypoint, or the direction of the
+  // turn. Let's assume wp.entryAngle is the angle of the segment *entering* the facility or the *next* road segment.
+
+  // Let's use the difference between current velocity angle and the waypoint's entry angle.
+  float diff = fabs(currentAngle - targetAngle);
+  while (diff > PI)
+    diff -= 2 * PI;
+  angleDiff = fabs(diff);
+
+  float speed = maxSpeed;
+
+  // Slow down for turns
+  // If the waypoint has a specific angle (e.g. not just 0 or we rely on the flag)
+  // For now, let's assume if angleDiff is large, we slow down.
+  // But we only want to do this if we are getting close?
+  // The user said "slow down depending on the upcoming turn instead of during a turn".
+  // So as we approach the waypoint, if it's a sharp turn, we slow down.
+
+  if (dist < 10.0f) {                // Start slowing down 10m before
+    if (angleDiff > 0.5f) {          // > ~30 degrees
+      float factor = (dist / 10.0f); // 0 to 1
+      // Blend between maxSpeed and a slower turn speed
+      float turnSpeed = maxSpeed * 0.4f;
+      speed = turnSpeed + (maxSpeed - turnSpeed) * factor;
+    }
+  }
+
+  // Stop at end
+  if (wp.stopAtEnd) {
+    // Arrive behavior
+    float stopRadius = 10.0f;
+    if (dist < stopRadius) {
+      float t = dist / stopRadius;
+      // Smooth step or linear
+      speed = maxSpeed * t;
+      if (speed < 0.5f)
+        speed = 0.5f; // Min speed to actually reach it
+    }
+  }
+
+  desired = Vector2Scale(desired, speed);
 
   Vector2 steer = Vector2Subtract(desired, velocity);
 

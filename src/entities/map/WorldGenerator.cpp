@@ -11,7 +11,7 @@ struct PlannedUnit {
   std::unique_ptr<Module> bottomFacility;
 };
 
-GeneratedMap WorldGenerator::generate() {
+GeneratedMap WorldGenerator::generate(const MapConfig& config) {
   Logger::Info("Generating World...");
 
   std::vector<std::unique_ptr<Module>> modules;
@@ -21,12 +21,13 @@ GeneratedMap WorldGenerator::generate() {
   std::mt19937 gen(rd());
 
   // Configuration
-  std::uniform_int_distribution<> numFacilitiesDist(5, 12);
   std::uniform_int_distribution<> roadTypeDist(0, 2);     // 0: Up, 1: Down, 2: Double
-  std::uniform_int_distribution<> facilityTypeDist(0, 1); // 0: Parking, 1: Charging
   std::uniform_int_distribution<> sizeDist(0, 1);         // 0: Small, 1: Large
 
-  int numFacilities = numFacilitiesDist(gen);
+  int smallParkingLeft = config.smallParkingCount;
+  int largeParkingLeft = config.largeParkingCount;
+  int smallChargingLeft = config.smallChargingCount;
+  int largeChargingLeft = config.largeChargingCount;
 
   auto createFacility = [&](int type, int size) -> std::unique_ptr<Module> {
     if (type == 0) { // Parking
@@ -42,21 +43,55 @@ GeneratedMap WorldGenerator::generate() {
     }
   };
 
-  for (int i = 0; i < numFacilities; ++i) {
+  while (smallParkingLeft > 0 || largeParkingLeft > 0 || smallChargingLeft > 0 || largeChargingLeft > 0) {
     PlannedUnit unit;
     int rType = roadTypeDist(gen);
 
+    // Helper to get next facility type
+    auto getNextFacility = [&]() -> std::unique_ptr<Module> {
+        std::vector<int> availableTypes;
+        if (smallParkingLeft > 0) availableTypes.push_back(0); // 0: Small Parking
+        if (largeParkingLeft > 0) availableTypes.push_back(1); // 1: Large Parking
+        if (smallChargingLeft > 0) availableTypes.push_back(2); // 2: Small Charging
+        if (largeChargingLeft > 0) availableTypes.push_back(3); // 3: Large Charging
+
+        if (availableTypes.empty()) return nullptr;
+
+        std::uniform_int_distribution<> dist(0, availableTypes.size() - 1);
+        int choice = availableTypes[dist(gen)];
+
+        if (choice == 0) { smallParkingLeft--; return createFacility(0, 0); }
+        if (choice == 1) { largeParkingLeft--; return createFacility(0, 1); }
+        if (choice == 2) { smallChargingLeft--; return createFacility(1, 0); }
+        if (choice == 3) { largeChargingLeft--; return createFacility(1, 1); }
+        
+        return nullptr;
+    };
+
     if (rType == 0) { // Up
       unit.road = std::make_unique<UpEntranceRoad>();
-      unit.topFacility = createFacility(facilityTypeDist(gen), sizeDist(gen));
+      unit.topFacility = getNextFacility();
     } else if (rType == 1) { // Down
       unit.road = std::make_unique<DownEntranceRoad>();
-      unit.bottomFacility = createFacility(facilityTypeDist(gen), sizeDist(gen));
+      unit.bottomFacility = getNextFacility();
     } else { // Double
       unit.road = std::make_unique<DoubleEntranceRoad>();
-      unit.topFacility = createFacility(facilityTypeDist(gen), sizeDist(gen));
-      unit.bottomFacility = createFacility(facilityTypeDist(gen), sizeDist(gen));
+      unit.topFacility = getNextFacility();
+      unit.bottomFacility = getNextFacility();
     }
+
+    // Link Facilities to Road (Parenting)
+    if (unit.topFacility) {
+        unit.topFacility->setParent(unit.road.get());
+    }
+    if (unit.bottomFacility) {
+        unit.bottomFacility->setParent(unit.road.get());
+    }
+    
+    // If we picked a road type but ran out of facilities for one side, that's fine, it will just be empty or we can force fill
+    // But the loop condition ensures we keep going until all are placed.
+    // However, if we have a double road and only 1 facility left, one side will be null.
+    
     plan.push_back(std::move(unit));
   }
 
@@ -64,7 +99,7 @@ GeneratedMap WorldGenerator::generate() {
   float currentX = 0.0f;
   float startY = 50.0f;   // Middle of map
   float safeX = -1000.0f; // Rightmost edge of occupied space
-  float roadWidth = 10.0f;
+  float roadWidth = 20.0f;
 
   // Add initial padding roads
   for (int i = 0; i < 3; ++i) {
@@ -79,7 +114,7 @@ GeneratedMap WorldGenerator::generate() {
     // Calculate Overhangs
     float leftOverhang = 0.0f;
     float rightOverhang = 0.0f;
-    float centerOffset = 5.0f; // Center of road (attachment point X)
+    float centerOffset = 10.0f; // Center of road (attachment point X)
 
     auto checkOverhang = [&](const std::unique_ptr<Module> &fac) {
       if (!fac)
@@ -114,21 +149,21 @@ GeneratedMap WorldGenerator::generate() {
 
     if (unit.topFacility) {
       // Top facility attaches at its bottom-center to road's top-center
-      // Road Top Center: {currentX + 5, startY}
-      // Facility Pos: {currentX + 5 - w/2, startY - h}
+      // Road Top Center: {currentX + 10, startY}
+      // Facility Pos: {currentX + 10 - w/2, startY - h}
       float w = unit.topFacility->getWidth();
       float h = unit.topFacility->getHeight();
-      unit.topFacility->worldPosition = {currentX + 5.0f - w / 2.0f, startY - h};
+      unit.topFacility->worldPosition = {currentX + 10.0f - w / 2.0f, startY - h};
       modules.push_back(std::move(unit.topFacility));
     }
 
     if (unit.bottomFacility) {
       // Bottom facility attaches at its top-center to road's bottom-center
-      // Road Bottom Center: {currentX + 5, startY + 7.5}
-      // Facility Pos: {currentX + 5 - w/2, startY + 7.5}
+      // Road Bottom Center: {currentX + 10, startY + 15}
+      // Facility Pos: {currentX + 10 - w/2, startY + 15}
       float w = unit.bottomFacility->getWidth();
       // float h = unit.bottomFacility->getHeight();
-      unit.bottomFacility->worldPosition = {currentX + 5.0f - w / 2.0f, startY + 7.5f};
+      unit.bottomFacility->worldPosition = {currentX + 10.0f - w / 2.0f, startY + 15.0f};
       modules.push_back(std::move(unit.bottomFacility));
     }
 

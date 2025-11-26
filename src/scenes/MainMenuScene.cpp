@@ -16,7 +16,7 @@ void MainMenuScene::load() {
   // Create "START" button
   auto start =
       std::make_shared<UIButton>(Vector2{cx - btnWidth / 2, cy}, Vector2{btnWidth, btnHeight}, "START", eventBus);
-  start->setOnClick([this]() { eventBus->publish(SceneChangeEvent{SceneType::Game}); });
+  start->setOnClick([this]() { eventBus->publish(SceneChangeEvent{SceneType::MapConfig, {}}); });
 
   // Create "EXIT" button
   auto exit = std::make_shared<UIButton>(Vector2{cx - btnWidth / 2, cy + btnHeight + spacing},

@@ -15,27 +15,45 @@ void Module::draw() const {
   }
 }
 
-void Module::addWaypoint(Vector2 localPos, float tolerance) { localWaypoints.push_back(Waypoint(localPos, tolerance)); }
+void Module::addWaypoint(Vector2 localPos, float tolerance, int id, float angle, bool stop) {
+    localWaypoints.emplace_back(localPos, tolerance, id, angle, stop);
+}
 
 std::vector<Waypoint> Module::getGlobalWaypoints() const {
   std::vector<Waypoint> globalWps;
   for (const auto &lwp : localWaypoints) {
-    globalWps.emplace_back(Vector2Add(worldPosition, lwp.position), lwp.tolerance, lwp.id);
+    globalWps.emplace_back(Vector2Add(worldPosition, lwp.position), lwp.tolerance, lwp.id, lwp.entryAngle, lwp.stopAtEnd);
   }
   return globalWps;
 }
 
+std::vector<Waypoint> Module::getPath() const {
+    std::vector<Waypoint> path;
+    
+    // 1. Get Parent's path first (Recursive)
+    if (parent) {
+        path = parent->getPath();
+    }
+
+    // 2. Append my own waypoints
+    // Note: We might want to filter or select specific waypoints, but for now, append all.
+    // Usually a module like a Road has 1 center waypoint.
+    // A facility has 1 center waypoint.
+    std::vector<Waypoint> myWps = getGlobalWaypoints();
+    path.insert(path.end(), myWps.begin(), myWps.end());
+
+    return path;
+}
+
 // --- Roads ---
 
-NormalRoad::NormalRoad() : Module(10.0f, 7.5f) {
+NormalRoad::NormalRoad() : Module(20.0f, 15.0f) {
   // Left/Right connections
   attachmentPoints.push_back({{0, height / 2.0f}, {-1, 0}});
   attachmentPoints.push_back({{width, height / 2.0f}, {1, 0}});
 
-  // Waypoints: Left, Center, Right
-  addWaypoint({0, height / 2.0f});
+  // Waypoints: Center only (Root of path)
   addWaypoint({width / 2.0f, height / 2.0f});
-  addWaypoint({width, height / 2.0f});
 }
 
 void NormalRoad::draw() const {
@@ -43,18 +61,15 @@ void NormalRoad::draw() const {
   Module::draw(); // Draw outline and waypoints
 }
 
-UpEntranceRoad::UpEntranceRoad() : Module(10.0f, 7.5f) {
+UpEntranceRoad::UpEntranceRoad() : Module(20.0f, 15.0f) {
   // Left/Right connections
   attachmentPoints.push_back({{0, height / 2.0f}, {-1, 0}});
   attachmentPoints.push_back({{width, height / 2.0f}, {1, 0}});
   // Up connection (Top center)
   attachmentPoints.push_back({{width / 2.0f, 0}, {0, -1}});
 
-  // Waypoints
-  addWaypoint({0, height / 2.0f});
-  addWaypoint({width, height / 2.0f});
+  // Waypoints: Center only
   addWaypoint({width / 2.0f, height / 2.0f}); // Center
-  addWaypoint({width / 2.0f, 0});             // Up
 }
 
 void UpEntranceRoad::draw() const {
@@ -66,18 +81,15 @@ void UpEntranceRoad::draw() const {
             {worldPosition.x + width / 2.0f, worldPosition.y + height / 2.0f}, WHITE);
 }
 
-DownEntranceRoad::DownEntranceRoad() : Module(10.0f, 7.5f) {
+DownEntranceRoad::DownEntranceRoad() : Module(20.0f, 15.0f) {
   // Left/Right connections
   attachmentPoints.push_back({{0, height / 2.0f}, {-1, 0}});
   attachmentPoints.push_back({{width, height / 2.0f}, {1, 0}});
   // Down connection (Bottom center)
   attachmentPoints.push_back({{width / 2.0f, height}, {0, 1}});
 
-  // Waypoints
-  addWaypoint({0, height / 2.0f});
-  addWaypoint({width, height / 2.0f});
+  // Waypoints: Center only
   addWaypoint({width / 2.0f, height / 2.0f}); // Center
-  addWaypoint({width / 2.0f, height});        // Down
 }
 
 void DownEntranceRoad::draw() const {
@@ -89,7 +101,7 @@ void DownEntranceRoad::draw() const {
             {worldPosition.x + width / 2.0f, worldPosition.y + height}, WHITE);
 }
 
-DoubleEntranceRoad::DoubleEntranceRoad() : Module(10.0f, 7.5f) {
+DoubleEntranceRoad::DoubleEntranceRoad() : Module(20.0f, 15.0f) {
   // Left/Right connections
   attachmentPoints.push_back({{0, height / 2.0f}, {-1, 0}});
   attachmentPoints.push_back({{width, height / 2.0f}, {1, 0}});
@@ -97,12 +109,8 @@ DoubleEntranceRoad::DoubleEntranceRoad() : Module(10.0f, 7.5f) {
   attachmentPoints.push_back({{width / 2.0f, 0}, {0, -1}});
   attachmentPoints.push_back({{width / 2.0f, height}, {0, 1}});
 
-  // Waypoints
-  addWaypoint({0, height / 2.0f});
-  addWaypoint({width, height / 2.0f});
+  // Waypoints: Center only
   addWaypoint({width / 2.0f, height / 2.0f}); // Center
-  addWaypoint({width / 2.0f, 0});             // Up
-  addWaypoint({width / 2.0f, height});        // Down
 }
 
 void DoubleEntranceRoad::draw() const {
@@ -116,16 +124,9 @@ void DoubleEntranceRoad::draw() const {
 
 // --- Facilities ---
 
-SmallParking::SmallParking() : Module(10.0f, 7.5f) {
-  // Waypoints
-  // Assuming attachment at bottom (y=height) or top (y=0)
-  // Let's add a central path
-  addWaypoint({width / 2.0f, height});        // Bottom entrance
-  addWaypoint({width / 2.0f, 0});             // Top entrance
+SmallParking::SmallParking() : Module(30.0f, 25.0f) {
+  // Waypoints: Center only
   addWaypoint({width / 2.0f, height / 2.0f}); // Center
-
-  // Parking spot (example)
-  addWaypoint({width / 2.0f, height / 2.0f}, 0.5f);
 }
 
 void SmallParking::draw() const {
@@ -136,9 +137,7 @@ void SmallParking::draw() const {
   DrawTextEx(GetFontDefault(), "P-Small", {worldPosition.x + 1, worldPosition.y + 1}, fontSize, 0.1f, DARKGRAY);
 }
 
-LargeParking::LargeParking() : Module(20.0f, 15.0f) {
-  addWaypoint({width / 2.0f, height});
-  addWaypoint({width / 2.0f, 0});
+LargeParking::LargeParking() : Module(60.0f, 50.0f) {
   addWaypoint({width / 2.0f, height / 2.0f});
 }
 
@@ -150,9 +149,7 @@ void LargeParking::draw() const {
   DrawTextEx(GetFontDefault(), "P-Large", {worldPosition.x + 1, worldPosition.y + 1}, fontSize, 0.1f, DARKGRAY);
 }
 
-SmallChargingStation::SmallChargingStation() : Module(5.0f, 5.0f) {
-  addWaypoint({width / 2.0f, height});
-  addWaypoint({width / 2.0f, 0});
+SmallChargingStation::SmallChargingStation() : Module(15.0f, 15.0f) {
   addWaypoint({width / 2.0f, height / 2.0f});
 }
 
@@ -164,9 +161,7 @@ void SmallChargingStation::draw() const {
   DrawTextEx(GetFontDefault(), "EV-S", {worldPosition.x + 0.5f, worldPosition.y + 0.5f}, fontSize, 0.1f, WHITE);
 }
 
-LargeChargingStation::LargeChargingStation() : Module(10.0f, 10.0f) {
-  addWaypoint({width / 2.0f, height});
-  addWaypoint({width / 2.0f, 0});
+LargeChargingStation::LargeChargingStation() : Module(30.0f, 30.0f) {
   addWaypoint({width / 2.0f, height / 2.0f});
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "entities/map/Modules.hpp"
 #include "entities/map/World.hpp"
+#include "events/GameEvents.hpp"
 #include <memory>
 #include <vector>
 
@@ -11,5 +12,5 @@ struct GeneratedMap {
 
 class WorldGenerator {
 public:
-  static GeneratedMap generate();
+  static GeneratedMap generate(const struct MapConfig& config);
 };

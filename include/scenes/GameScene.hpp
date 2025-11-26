@@ -1,26 +1,25 @@
 #pragma once
 #include "core/EventBus.hpp"
+#include "core/EventBus.hpp"
+#include "events/GameEvents.hpp"
 #include "entities/map/Modules.hpp"
 #include "entities/map/World.hpp"
 #include "entities/Car.hpp"
 #include "scenes/IScene.hpp"
 #include "ui/UIManager.hpp"
 #include <memory>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 class GameScene : public IScene {
 public:
-  explicit GameScene(std::shared_ptr<EventBus> bus);
+  explicit GameScene(std::shared_ptr<EventBus> bus, MapConfig config);
   ~GameScene() override;
 
   void load() override;
   void unload() override;
   void update(double dt) override;
   void draw() override;
-
-  const Camera2D &getCamera() const { return camera; }
-  size_t getListenerCount() const { return eventTokens.size(); }
 
 private:
   void handleInput(double dt);
@@ -32,9 +31,9 @@ private:
   std::vector<std::unique_ptr<Module>> modules;
   std::vector<std::unique_ptr<Car>> cars;
 
-  Camera2D camera = {};
-  UIManager ui;
-
+  Camera2D camera = {{0,0}, {0,0}, 0.0f, 1.0f};
   bool isPaused = false;
-  std::unordered_set<int> keysDown;
+  UIManager ui;
+  MapConfig config;
+  std::set<int> keysDown;
 };

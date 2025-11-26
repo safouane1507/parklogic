@@ -89,7 +89,7 @@ private:
   /**
    * @brief Calculates and applies a steering force towards a target.
    *
-   * @param target The target position.
+   * @param wp The target waypoint.
    */
-  void seek(Vector2 target);
+  void seek(const Waypoint& wp);
 };

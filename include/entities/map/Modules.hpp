@@ -23,15 +23,23 @@ public:
 
   virtual void draw() const;
 
-  void addWaypoint(Vector2 localPos, float tolerance = 1.0f);
+  void addWaypoint(Vector2 localPos, float tolerance = 1.0f, int id = -1, float angle = 0.0f, bool stop = false);
 
   std::vector<Waypoint> getGlobalWaypoints() const;
+
+  // Hierarchy
+  void setParent(Module* p) { parent = p; }
+  Module* getParent() const { return parent; }
+
+  // Recursive path retrieval
+  virtual std::vector<Waypoint> getPath() const;
 
 protected:
   float width;
   float height;
   std::vector<AttachmentPoint> attachmentPoints;
   std::vector<Waypoint> localWaypoints; // Stored relative to module top-left
+  Module* parent = nullptr;
 };
 
 // --- Roads ---
