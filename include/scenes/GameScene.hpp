@@ -1,12 +1,7 @@
 #pragma once
 #include "core/EventBus.hpp"
-#include "core/EventBus.hpp"
 #include "events/GameEvents.hpp"
-#include "entities/map/Modules.hpp"
-#include "entities/map/World.hpp"
-#include "entities/Car.hpp"
 #include "scenes/IScene.hpp"
-#include "ui/UIManager.hpp"
 #include <memory>
 #include <set>
 #include <vector>
@@ -22,18 +17,17 @@ public:
   void draw() override;
 
 private:
-  void handleInput(double dt);
+  void handleInput();
 
   std::shared_ptr<EventBus> eventBus;
   std::vector<Subscription> eventTokens;
 
-  std::unique_ptr<World> world;
-  std::vector<std::unique_ptr<Module>> modules;
-  std::vector<std::unique_ptr<Car>> cars;
+  std::unique_ptr<class EntityManager> entityManager;
+  std::unique_ptr<class TrafficSystem> trafficSystem;
+  std::unique_ptr<class GameHUD> gameHUD;
 
-  Camera2D camera = {{0,0}, {0,0}, 0.0f, 1.0f};
+  std::unique_ptr<class CameraSystem> cameraSystem;
   bool isPaused = false;
-  UIManager ui;
   MapConfig config;
   std::set<int> keysDown;
 };

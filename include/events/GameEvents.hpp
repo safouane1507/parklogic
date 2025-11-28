@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "entities/map/Waypoint.hpp"
+#include "raylib.h"
 
 struct MapConfig {
   int smallParkingCount = 2;
@@ -15,6 +16,23 @@ struct SceneChangeEvent {
   MapConfig config;
 };
 
+struct GenerateWorldEvent {
+    MapConfig config;
+};
+
+struct WorldBoundsEvent {
+    float width;
+    float height;
+};
+
+struct GameUpdateEvent {
+    double dt;
+};
+
+struct BeginCameraEvent {};
+struct EndCameraEvent {};
+struct DrawWorldEvent {};
+
 struct GamePausedEvent {};
 struct GameResumedEvent {};
 struct ToggleDebugOverlayEvent {
@@ -25,7 +43,17 @@ struct CameraZoomEvent {
   float zoomDelta;
 };
 
+struct CameraMoveEvent {
+    Vector2 delta;
+};
+
 struct SpawnCarEvent {};
+
+struct SpawnCarRequestEvent {};
+
+struct CreateCarEvent {
+    Vector2 position;
+};
 
 struct CarSpawnedEvent {
     class Car* car;
