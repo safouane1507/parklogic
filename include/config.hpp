@@ -6,7 +6,9 @@ constexpr const char *WINDOW_TITLE = "ParkLogic"; ///< Window Title
 // Logical Resolution (Render Texture Size)
 constexpr int LOGICAL_WIDTH = 1280; ///< Internal resolution width
 constexpr int LOGICAL_HEIGHT = 720; ///< Internal resolution height
-constexpr float PPM = 20.0f;        // Pixels Per Meter
+constexpr int PIXELS_PER_ART_PIXEL = 3; ///< Resolution pixels per art pixel
+constexpr int ART_PIXELS_PER_METER = 7; ///< Art pixels per meter
+constexpr float PPM = static_cast<float>(PIXELS_PER_ART_PIXEL * ART_PIXELS_PER_METER);        // Pixels Per Meter (21.0f)
 
 // Physical Window Start Size
 constexpr int INITIAL_WINDOW_WIDTH = 1280; ///< Initial window width

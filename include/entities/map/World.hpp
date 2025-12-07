@@ -1,5 +1,7 @@
 #pragma once
 #include "entities/Entity.hpp"
+#include <vector>
+#include <string>
 
 /**
  * @class World
@@ -27,4 +29,10 @@ private:
   float width;
   float height;
   bool showGrid;
+
+  // Background
+  std::vector<std::vector<int>> backgroundTiles; // Stores index of texture to use
+  std::vector<std::string> tileTextures;         // Texture names
+  float tileWidthMeter;
+  float tileHeightMeter;
 };

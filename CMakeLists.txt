@@ -39,6 +39,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 
+# --- Assets ---
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets
+    ${CMAKE_CURRENT_BINARY_DIR}/assets
+    COMMENT "Copying assets to build directory"
+)
+
 # --- Compiler Flags ---
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /EHsc)
