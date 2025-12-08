@@ -37,9 +37,9 @@ World::World(float width, float height) : width(width), height(height), showGrid
   tileTextures = {"grass1", "grass2", "grass3", "grass4"};
 
   // Calculate Tile Size in Meters
-  // 32 art pixels per tile
+  // BACKGROUND_TILE_SIZE art pixels per tile
   // ART_PIXELS_PER_METER = 7
-  float artPixelsPerTile = 32.0f;
+  float artPixelsPerTile = static_cast<float>(Config::BACKGROUND_TILE_SIZE);
   tileWidthMeter = artPixelsPerTile / static_cast<float>(Config::ART_PIXELS_PER_METER);
   tileHeightMeter = tileWidthMeter;
 

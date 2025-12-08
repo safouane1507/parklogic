@@ -1,4 +1,5 @@
 #include "entities/map/WorldGenerator.hpp"
+#include "config.hpp"
 #include "core/Logger.hpp"
 #include "entities/map/Modules.hpp"
 #include "raymath.h"
@@ -290,12 +291,27 @@ GeneratedMap WorldGenerator::generate(const MapConfig& config) {
       maxY = mod->worldPosition.y + mod->getHeight();
   }
 
-  float padding = 20.0f;
+  float tileWidthMeter = static_cast<float>(Config::BACKGROUND_TILE_SIZE) / static_cast<float>(Config::ART_PIXELS_PER_METER);
+
+  // We want the padding to be a multiple of tile size
+  float padding = tileWidthMeter * 5.0f; // 5 tiles of padding
+
   float contentWidth = maxX - minX;
   float contentHeight = maxY - minY;
 
-  float worldWidth = contentWidth + 2 * padding;
-  float worldHeight = contentHeight + 2 * padding;
+  // We want total world width/height to be multiples of tile size for clean borders
+  // But more importantly, we want the "content" to start at a tile boundary relative to 0,0
+  // World starts at 0,0.
+  // We will shift all modules so that their new minX, minY is at 'padding'.
+  // Since 'padding' is a multiple of tile size, and 0,0 is aligned, the grid should align.
+
+  // Ensure total world size covers content + padding
+  float worldWidthRaw = contentWidth + 2 * padding;
+  float worldHeightRaw = contentHeight + 2 * padding;
+
+  // Round up world dimensions to next tile multiple just to be safe/clean
+  float worldWidth = std::ceil(worldWidthRaw / tileWidthMeter) * tileWidthMeter;
+  float worldHeight = std::ceil(worldHeightRaw / tileWidthMeter) * tileWidthMeter;
 
   // Shift modules to center (which means starting at padding)
   // We want minX to be at 'padding', minY to be at 'padding'
