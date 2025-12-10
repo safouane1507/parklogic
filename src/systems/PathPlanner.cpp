@@ -3,6 +3,16 @@
 #include "raymath.h"
 #include <cmath>
 
+// --- Constants for Waypoint Geometry ---
+
+// The horizontal center of the T-junction on an entrance road (in art pixels).
+// This is where the vertical access road meets the horizontal main road.
+static constexpr float ROAD_TJUNCTION_CENTER_X = 142.0f;
+
+// The horizontal distance from the T-junction center to the Entry/Exit lanes (in art pixels).
+// The total separation between the two vertical lanes is 36 pixels (18 * 2).
+static constexpr float ENTRANCE_LANE_OFFSET_X = 18.0f; 
+
 // Helper to convert art pixels to meters
 static float P2M(float artPixels) {
     return artPixels / static_cast<float>(Config::ART_PIXELS_PER_METER);
@@ -11,102 +21,94 @@ static float P2M(float artPixels) {
 std::vector<Waypoint> PathPlanner::GeneratePath(const Car* car, const Module* targetFac, const Spot& targetSpot) {
     std::vector<Waypoint> path;
     
-    // 1. Determine Lane and Side
-    // Cars moving right (positive X) use DOWN lane.
-    // Cars moving left (negative X) use UP lane.
-    Lane lane = (car->getVelocity().x > 0) ? Lane::DOWN : Lane::UP;
+    // 1. Determine Horizontal Lane on the Main Road
+    // Cars moving right (positive X) use the DOWN lane (bottom lane).
+    // Cars moving left (negative X) use the UP lane (top lane).
+    Lane mainRoadLane = (car->getVelocity().x > 0) ? Lane::DOWN : Lane::UP;
     
-    // Entry logic: Up Fac -> Right (True), Down Fac -> Left (False)
-    // "Up Fac" means the facility is physically "above" the road (top side).
-    // "Down Fac" means it is below the road.
-    bool isUpFac = targetFac->isUp(); 
-    bool useRightSide = isUpFac; 
+    // 2. Determine Facility Orientation and Entry Side
+    // UP Facilities (physically above the road) require entering from the RIGHT side of the access road.
+    // DOWN Facilities (physically below the road) require entering from the LEFT side of the access road.
+    bool isUpFacility = targetFac->isUp(); 
+    bool useRightSideEntry = isUpFacility; // Up -> Right, Down -> Left
 
-    // 2. Waypoint 1: Road Entry
+    // 3. Waypoint 1: Road Entry Point
+    // This is the point on the main road where the car turns into the facility's access road.
     Module* parentRoad = targetFac->getParent();
     if (parentRoad) {
-        path.push_back(CalculateRoadEntry(parentRoad, lane, useRightSide));
+        path.push_back(CalculateRoadEntry(parentRoad, mainRoadLane, useRightSideEntry));
     } else {
-        // Fallback: Just go to facility center if no road
-        path.push_back(CalculateFacilityEntry(targetFac, useRightSide));
+        // Fallback: Direct approach if no parent road is defined (should not happen in proper setup)
+        path.push_back(CalculateFacilityEntry(targetFac, useRightSideEntry));
     }
 
-    // 3. Waypoint 2: Facility Center / Entrance
-    path.push_back(CalculateFacilityEntry(targetFac, useRightSide));
+    // 4. Waypoint 2: Facility Entry Point
+    // This is the point inside the facility's entrance, aligned with the road entry point.
+    path.push_back(CalculateFacilityEntry(targetFac, useRightSideEntry));
 
-    // 4. Waypoint 3: Alignment Point
+    // 5. Waypoint 3: Alignment Point
+    // A helper point in front of the parking spot to ensure a straight approach.
     path.push_back(CalculateAlignmentPoint(targetFac, targetSpot));
 
-    // 5. Waypoint 4: Final Spot
+    // 6. Waypoint 4: Final Parking Spot
+    // The exact center of the designated parking spot.
     path.push_back(CalculateSpotPoint(targetFac, targetSpot));
 
     return path;
 }
 
-Waypoint PathPlanner::CalculateRoadEntry(const Module* road, Lane lane, bool useRightSide) {
-    // Road Entry Logic moved from Modules.cpp
+Waypoint PathPlanner::CalculateRoadEntry(const Module* road, Lane roadLane, bool useRightSideEntry) {
+    // The "Road Entry" is one of 4 possible points on the Entrance Module.
+    // It is defined by the intersection of:
+    // 1. The Horizontal Lane (UP or DOWN)
+    // 2. The Vertical Entry Lane (Left or Right of the T-junction center)
     
-    // Most roads (Up/Down/Double Entrance) share this center logic:
-    // xCenter = 142 (art pixels)
-    // However, NormalRoad simply returns center.
-    // We need to handle different road types or use a generic "getEntry" helper if we kept it on Module?
-    // The user wanted centralization. 
-    // But road geometry IS intrinsic to the module. 
-    // Let's rely on the module's generic properties (position) + specific offsets here.
+    Vector2 roadWorldPos = road->worldPosition;
     
-    // Actually, distinct road types have different "entry" X coordinates. 
-    // NormalRoad doesn't really have an "entry" in the same way (it's just a road segment).
-    // Entrances (Up/Down/Double) have the T-junction at x=142.
+    // Horizontal Position (X):
+    // Based on the T-junction center +/- the entrance lane offset.
+    // Up Facility   -> Enter on Right side -> Center + 18
+    // Down Facility -> Enter on Left side  -> Center - 18
+    float xCenter = P2M(ROAD_TJUNCTION_CENTER_X);
+    float xOffset = useRightSideEntry ? P2M(ENTRANCE_LANE_OFFSET_X) : -P2M(ENTRANCE_LANE_OFFSET_X);
     
-    // Let's do a dynamic checks for now, or assume standard T-junction geometry for parent of a facility.
-    // Facilities are attached to EntranceRoads.
-    
-    Vector2 roadPos = road->worldPosition;
-    float xCenter = P2M(142); // Default T-junction center
-    
-    // Note: NormalRoad doesn't usually parent a facility, only EntranceRoads do.
-    
-    float yOffset = (lane == Lane::DOWN) ? P2M(Config::LANE_OFFSET_DOWN) : P2M(Config::LANE_OFFSET_UP);
-    float xOffset = useRightSide ? P2M(18) : -P2M(18);
+    // Vertical Position (Y):
+    // Based on the main road lane logic defined in Config.
+    float yOffset = (roadLane == Lane::DOWN) ? P2M(Config::LANE_OFFSET_DOWN) : P2M(Config::LANE_OFFSET_UP);
 
-    // If it's a generic module without specific T-junction knowledge, we might guess center?
-    // But for now, we assume the 142 center for all "connector" roads.
-    
-    return Waypoint(Vector2Add(roadPos, {xCenter + xOffset, yOffset}), 2.5f);
+    // Combine to get the exact turning point on the main road
+    return Waypoint(Vector2Add(roadWorldPos, {xCenter + xOffset, yOffset}), 2.5f);
 }
 
-Waypoint PathPlanner::CalculateFacilityEntry(const Module* facility, bool useRightSide) {
-    // Center Logic moved from Module::getCenterWaypoint
+Waypoint PathPlanner::CalculateFacilityEntry(const Module* facility, bool useRightSideEntry) {
+    // The "Facility Entry" aligns with the Road Entry but is physically inside the facility.
+    // It serves as the anchor point for the 90-degree turn into the facility.
     
-    // Base position is usually the first local waypoint or center of module.
-    // But we want to centralize logic.
-    // Most facilities define their "main" waypoint at:
-    // width/2, height for UP facilities? No, look at Modules.cpp.
-    // SmallParking: 218, height/2.
-    // We should probably ask the Module for its "Entry Local Point" or "Connector Point".
-    // Or we keep `getEntrancePoint()` on Module but remove path logic.
-    
-    // To be cleaner: The Module should know physically WHERE its entrance connector is.
-    // We will assume the Module still holds a list of "Structural Waypoints" (localWaypoints).
-    // We just calculate the approach vector here.
-    
+    // We start from the facility's "Base" entrance point.
+    // Typically, this is the center of the module or the first local waypoint.
     Vector2 basePos = {facility->getWidth()/2, facility->getHeight()/2};
-    std::vector<Waypoint> localWps = facility->getLocalWaypoints(); // We need to expose this getter
+    std::vector<Waypoint> localWps = facility->getLocalWaypoints();
     if (!localWps.empty()) {
         basePos = localWps[0].position;
     }
     
-    float offset = useRightSide ? P2M(18) : -P2M(18);
+    // We apply the SAME Horizontal Offset as the Road Entry to ensure vertical alignment.
+    // Up Facility (Right Entry)   -> Shift Right (+18)
+    // Down Facility (Left Entry)  -> Shift Left (-18)
+    float offset = useRightSideEntry ? P2M(ENTRANCE_LANE_OFFSET_X) : -P2M(ENTRANCE_LANE_OFFSET_X);
     Vector2 offsetVec = {offset, 0};
     
     return Waypoint(Vector2Add(facility->worldPosition, Vector2Add(basePos, offsetVec)), 1.5f);
 }
 
 Waypoint PathPlanner::CalculateAlignmentPoint(const Module* facility, const Spot& spot) {
-    // Alignment Logic
+    // Calculates a point ~8 meters in front of the spot, aligned with the spot's orientation.
+    // This forces the car to "pull up" straight before making the final approach.
+    
     Vector2 spotGlobal = Vector2Add(facility->worldPosition, spot.localPosition);
     
-    float backAngle = spot.orientation + PI; // Opposite direction
+    // "Back" direction is opposite to the spot's orientation.
+    float backAngle = spot.orientation + PI; 
     float dist = 8.0f; 
     
     Vector2 offset = { cosf(backAngle) * dist, sinf(backAngle) * dist };
@@ -117,6 +119,7 @@ Waypoint PathPlanner::CalculateAlignmentPoint(const Module* facility, const Spot
 
 Waypoint PathPlanner::CalculateSpotPoint(const Module* facility, const Spot& spot) {
     Vector2 spotGlobal = Vector2Add(facility->worldPosition, spot.localPosition);
-    // Strict tolerance and StopAtEnd
+    
+    // Final destination: High precision required (0.2m tolerance), Stop at End = true.
     return Waypoint(spotGlobal, 0.2f, spot.id, spot.orientation, true);
 }
