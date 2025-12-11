@@ -73,15 +73,52 @@ const AttachmentPoint *Module::getAttachmentPointByNormal(Vector2 normal) const 
 // Logic moved to PathPlanner system.
 
 int Module::getRandomSpotIndex() const {
-    if (spots.empty()) return -1;
-    return GetRandomValue(0, (int)spots.size() - 1);
+    std::vector<int> freeIndices;
+    for (int i = 0; i < (int)spots.size(); ++i) {
+        if (spots[i].state == SpotState::FREE) {
+            freeIndices.push_back(i);
+        }
+    }
+    
+    if (freeIndices.empty()) return -1;
+    
+    int randIdx = GetRandomValue(0, (int)freeIndices.size() - 1);
+    return freeIndices[randIdx];
 }
 
 Spot Module::getSpot(int index) const {
     if (index >= 0 && index < (int)spots.size()) {
         return spots[index];
     }
-    return {{0,0}, 0};
+    return {{0,0}, 0, -1, SpotState::FREE}; // Safe default
+}
+
+void Module::setSpotState(int index, SpotState state) {
+    if (index >= 0 && index < (int)spots.size()) {
+        spots[index].state = state;
+    }
+}
+
+Module::SpotCounts Module::getSpotCounts() const {
+    SpotCounts counts = {0, 0, 0};
+    for (const auto& spot : spots) {
+        if (spot.state == SpotState::FREE) counts.free++;
+        else if (spot.state == SpotState::RESERVED) counts.reserved++;
+        else if (spot.state == SpotState::OCCUPIED) counts.occupied++;
+    }
+    return counts;
+}
+
+float Module::getOccupancyPercentage() const {
+    if (spots.empty()) return 0.0f;
+    
+    int occupiedCount = 0;
+    for (const auto& spot : spots) {
+        if (spot.state == SpotState::OCCUPIED) {
+            occupiedCount++;
+        }
+    }
+    return (float)occupiedCount / (float)spots.size();
 }
 
 // --- Roads ---

@@ -26,9 +26,10 @@ Car::Car(Vector2 startPos, const World *world, Vector2 initialVelocity)
     }
 } // 15 m/s (~54 km/h), 60 m/s^2 force
 
-void Car::setParkingContext(const Module* fac, const Spot& spot) {
+void Car::setParkingContext(const Module* fac, const Spot& spot, int spotIndex) {
     parkedFacility = fac;
     parkedSpot = spot;
+    parkedSpotIndex = spotIndex;
 }
 
 /**

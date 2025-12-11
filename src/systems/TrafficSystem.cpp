@@ -112,17 +112,59 @@ TrafficSystem::TrafficSystem(std::shared_ptr<EventBus> bus, const EntityManager&
         
         // 1. Determine Spot
         int spotIndex = targetFac->getRandomSpotIndex();
+        
+        // Handle "Through Traffic" (No spots available)
         if (spotIndex == -1) {
-             Logger::Error("TrafficSystem: Facility has no spots.");
+             Logger::Info("TrafficSystem: Facility full (Free: 0). Car passing through.");
+             
+             // Calculate Map Bounds (Duplicated logic for now, or could act as if exiting)
+             float minRoadX = std::numeric_limits<float>::max();
+             float maxRoadX = std::numeric_limits<float>::lowest();
+             const auto& mods = entityManager.getModules();
+             for (const auto &mod : mods) {
+                 if (auto *r = dynamic_cast<NormalRoad *>(mod.get())) {
+                     float x = r->worldPosition.x;
+                     float w = r->getWidth();
+                     if (x < minRoadX) minRoadX = x;
+                     if (x + w > maxRoadX) maxRoadX = x + w;
+                }
+             }
+             if (minRoadX == std::numeric_limits<float>::max()) minRoadX = 0;
+             if (maxRoadX == std::numeric_limits<float>::lowest()) maxRoadX = 100;
+
+             // Determine direction based on velocity
+             bool movingRight = e.car->getVelocity().x > 0;
+             
+             // Target beyond map edge
+             float finalX = movingRight ? (maxRoadX + 2.0f) : (minRoadX - 2.0f);
+             float yPos = e.car->getPosition().y; // Maintain current lane Y
+             
+             // Create direct exit path
+             std::vector<Waypoint> exitPath;
+             exitPath.push_back(Waypoint({finalX, yPos}, 1.0f, -1, 0.0f, true));
+             
+             e.car->setPath(exitPath);
+             e.car->setState(Car::CarState::EXITING);
+             
+             eventBus->publish(AssignPathEvent{e.car, exitPath});
              return;
         }
+        
+        // Reserve the spot immediately
+        targetFac->setSpotState(spotIndex, SpotState::RESERVED);
+        
+        // Log Reservation
+        auto counts = targetFac->getSpotCounts();
+        Logger::Info("TrafficSystem: Spot Reserved. Facility Status: [Free: {}, Reserved: {}, Occupied: {}]", 
+                     counts.free, counts.reserved, counts.occupied);
+        
         Spot spot = targetFac->getSpot(spotIndex);
 
         // 2. Generate Path
         std::vector<Waypoint> path = PathPlanner::GeneratePath(e.car, targetFac, spot);
         
         // Store context in Car so it knows where it is when it wants to leave
-        e.car->setParkingContext(targetFac, spot);
+        e.car->setParkingContext(targetFac, spot, spotIndex);
 
         // Publish Path Assignment
         eventBus->publish(AssignPathEvent{e.car, path});
@@ -161,17 +203,44 @@ TrafficSystem::TrafficSystem(std::shared_ptr<EventBus> bus, const EntityManager&
             Car* car = carPtr.get();
             if (!car) continue;
 
+            // Check for Arrival (Transition RESERVED -> OCCUPIED)
+            // If car is ALIGNING or PARKED, it has physically arrived at the spot.
+            // We need to ensure the spot reflects this.
+            // We can check if state is RESERVED, then switch to OCCUPIED.
+            if (car->getState() == Car::CarState::ALIGNING || car->getState() == Car::CarState::PARKED) {
+                 Module* fac =  const_cast<Module*>(car->getParkedFacility());
+                 int idx = car->getParkedSpotIndex();
+                 if (fac && idx != -1) {
+                     Spot s = fac->getSpot(idx);
+                     if (s.state == SpotState::RESERVED) {
+                         fac->setSpotState(idx, SpotState::OCCUPIED);
+                         auto counts = fac->getSpotCounts();
+                         Logger::Info("TrafficSystem: Spot Occupied. Facility Status: [Free: {}, Reserved: {}, Occupied: {}]", 
+                                      counts.free, counts.reserved, counts.occupied);
+                     }
+                 }
+            }
+
             // Check if ready to leave parking
             if (car->isReadyToLeave()) {
                 Logger::Info("TrafficSystem: Car finished parking. Generating exit path...");
                 
                 // 1. Context
-                const Module* currentFac = car->getParkedFacility();
+                Module* currentFac = const_cast<Module*>(car->getParkedFacility());
                 Spot currentSpot = car->getParkedSpot();
+                int idx = car->getParkedSpotIndex();
                 
                 if (!currentFac) {
                      car->setState(Car::CarState::DRIVING); 
                      continue;
+                }
+                
+                // Free the spot on exit!
+                if (idx != -1) {
+                    currentFac->setSpotState(idx, SpotState::FREE);
+                    auto counts = currentFac->getSpotCounts();
+                    Logger::Info("TrafficSystem: Spot Freed. Facility Status: [Free: {}, Reserved: {}, Occupied: {}]", 
+                                 counts.free, counts.reserved, counts.occupied);
                 }
                 
                 // 2. Decide Direction

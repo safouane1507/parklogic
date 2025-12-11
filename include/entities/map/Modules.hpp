@@ -10,13 +10,17 @@ struct AttachmentPoint {
 
 enum class Lane { UP, DOWN };
 
+enum class SpotState {
+    FREE,
+    RESERVED,
+    OCCUPIED
+};
+
 struct Spot {
     Vector2 localPosition;
-    float orientation; // 0=Right, PI/2=Down, PI=Left, 3PI/2=Up (in radians, standard math)
-                       // Or use strict: 0=Right, 90=Down, 180=Left, 270=Up?
-                       // User said assets are facing UP. Rot 0 is RIGHT.
-                       // Let's use standard radians for steering behavior.
+    float orientation; // 0=Right, PI/2=Down, PI=Left, 3PI/2=Up (in radians)
     int id;
+    SpotState state = SpotState::FREE;
 };
 
 class Module {
@@ -54,6 +58,19 @@ public:
 
   // For Facilities: Get the Spot data by index
   Spot getSpot(int index) const;
+
+  // Set the state of a spot
+  void setSpotState(int index, SpotState state);
+
+  struct SpotCounts {
+      int free;
+      int reserved;
+      int occupied;
+  };
+  SpotCounts getSpotCounts() const;
+
+  // Get occupancy percentage (0.0 to 1.0)
+  float getOccupancyPercentage() const;
   
   // Helper to determine facility orientation
   virtual bool isUp() const { return false; }

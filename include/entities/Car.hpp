@@ -88,9 +88,10 @@ public:
 
   // Context for Parking
   // Used to generate the exit path.
-  void setParkingContext(const Module* fac, const Spot& spot);
+  void setParkingContext(const Module* fac, const Spot& spot, int spotIndex);
   const Module* getParkedFacility() const { return parkedFacility; }
   const Spot& getParkedSpot() const { return parkedSpot; }
+  int getParkedSpotIndex() const { return parkedSpotIndex; }
 
 private:
   Vector2 position;
@@ -104,7 +105,8 @@ private:
   float currentRotation = 0.0f; // degrees, for smooth rendering
   
   const Module* parkedFacility = nullptr;
-  Spot parkedSpot = {{0,0}, 0.0f, -1}; 
+  Spot parkedSpot = {{0,0}, 0.0f, -1};
+  int parkedSpotIndex = -1; 
 
   float maxSpeed;
   float maxForce;
