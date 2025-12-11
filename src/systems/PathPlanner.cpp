@@ -151,7 +151,10 @@ std::vector<Waypoint> PathPlanner::GenerateExitPath(const Car* car, const Module
         
         // If exiting Right (Down Lane), we need to hit the Right connector (+18)
         // If exiting Left (Up Lane), we need to hit the Left connector (-18)
-        bool roadConnectorSide = exitRight; 
+        // BUT: The connector we use depends on the FACILITY type, not the target direction.
+        // Up Facility   -> Uses Left Connector (Lower X)
+        // Down Facility -> Uses Right Connector (Higher X)
+        bool roadConnectorSide = !currentFac->isUp(); 
         
         path.push_back(CalculateRoadEntry(parentRoad, exitLane, roadConnectorSide));
     }
