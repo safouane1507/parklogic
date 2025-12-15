@@ -10,6 +10,15 @@ struct AttachmentPoint {
 
 enum class Lane { UP, DOWN };
 
+enum class ModuleType {
+    GENERIC,
+    ROAD,
+    SMALL_PARKING,
+    LARGE_PARKING,
+    SMALL_CHARGING,
+    LARGE_CHARGING
+};
+
 enum class SpotState {
     FREE,
     RESERVED,
@@ -78,6 +87,9 @@ public:
   // Accessor for local waypoints (needed by PathPlanner)
   const std::vector<Waypoint>& getLocalWaypoints() const { return localWaypoints; }
 
+  // Type Identification
+  virtual ModuleType getType() const { return ModuleType::GENERIC; }
+
 protected:
   float width;
   float height;
@@ -123,6 +135,7 @@ public:
   SmallParking(bool isTop);
   void draw() const override;
   bool isUp() const override { return isTop; }
+  ModuleType getType() const override { return ModuleType::SMALL_PARKING; }
 private:
   bool isTop;
 };
@@ -132,6 +145,7 @@ public:
   LargeParking(bool isTop);
   void draw() const override;
   bool isUp() const override { return isTop; }
+  ModuleType getType() const override { return ModuleType::LARGE_PARKING; }
 private:
   bool isTop;
 };
@@ -141,6 +155,7 @@ public:
   SmallChargingStation(bool isTop);
   void draw() const override;
   bool isUp() const override { return isTop; }
+  ModuleType getType() const override { return ModuleType::SMALL_CHARGING; }
 private:
   bool isTop;
 };
@@ -150,6 +165,7 @@ public:
   LargeChargingStation(bool isTop);
   void draw() const override;
   bool isUp() const override { return isTop; }
+  ModuleType getType() const override { return ModuleType::LARGE_CHARGING; }
 private:
   bool isTop;
 };

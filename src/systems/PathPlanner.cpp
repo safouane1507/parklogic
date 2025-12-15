@@ -116,10 +116,51 @@ Waypoint PathPlanner::CalculateFacilityEntry(const Module* facility, bool useRig
     if (!localWps.empty()) {
         basePos = localWps[0].position;
     }
-    float offset = useRightSideEntry ? P2M(ENTRANCE_LANE_OFFSET_X) : -P2M(ENTRANCE_LANE_OFFSET_X);
-    Vector2 offsetVec = {offset, 0};
     
-    return Waypoint(Vector2Add(facility->worldPosition, Vector2Add(basePos, offsetVec)));
+    // Horizontal Offset for Lane (Left/Right entry)
+    float xOffset = useRightSideEntry ? P2M(ENTRANCE_LANE_OFFSET_X) : -P2M(ENTRANCE_LANE_OFFSET_X);
+    
+    // Vertical Offset for "Gate Depth" (Running into the facility)
+    // Up Facility (Top): Inward is DOWN (+Y) relative to World, but let's check local space?
+    // basePos is in World Space usually in these calcs if added to facility->worldPosition.
+    // Wait, localWps are local.
+    
+    // Let's calculate the final World Position first.
+    Vector2 finalPos = Vector2Add(facility->worldPosition, basePos);
+    finalPos.x += xOffset;
+    
+    // Apply Gate Depth
+    ModuleType type = facility->getType();
+    float depth = Config::CarAI::GateDepth::GENERIC;
+    
+    switch (type) {
+        case ModuleType::SMALL_PARKING: depth = Config::CarAI::GateDepth::SMALL_PARKING; break;
+        case ModuleType::LARGE_PARKING: depth = Config::CarAI::GateDepth::LARGE_PARKING; break;
+        case ModuleType::SMALL_CHARGING: depth = Config::CarAI::GateDepth::SMALL_CHARGING; break;
+        case ModuleType::LARGE_CHARGING: depth = Config::CarAI::GateDepth::LARGE_CHARGING; break;
+        default: break;
+    }
+    
+    // Direction calculation
+    // Facility UP (at top of map): Entrance is at bottom of facility. Driving IN means driving UP?
+    // No. UpEntranceRoad connects to a facility ABOVE the road. 
+    // Wait. `UpEntranceRoad` connects to a facility.
+    // Let's verify orientation.
+    // If facility->isUp(), it is logically "Above" the road.
+    // The road is at Y. Facility is at Y - Height.
+    // So driving INTO it means driving UP (-Y).
+    
+    // However, the `basePos` (gate) is usually at the edge touching the road.
+    // So we want to move `depth` meters further UP (-Y) for Up Facility.
+    // And `depth` meters further DOWN (+Y) for Down Facility.
+    
+    if (facility->isUp()) {
+        finalPos.y -= depth;
+    } else {
+        finalPos.y += depth;
+    }
+    
+    return Waypoint(finalPos);
 }
 
 Waypoint PathPlanner::CalculateAlignmentPoint(const Module* facility, const Spot& spot) {
