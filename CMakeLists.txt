@@ -50,6 +50,13 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 # --- Compiler Flags ---
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4 /EHsc)
+    # --- Assets ---
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/assets
+        ${CMAKE_CURRENT_BINARY_DIR}/Debug/assets
+        COMMENT "Copying assets to build directory"
+    )
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 endif()
