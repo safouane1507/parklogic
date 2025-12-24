@@ -16,6 +16,10 @@ void GameLoop::run(std::function<void(double)> update, std::function<void()> ren
     // Cap frame time to avoid spiral of death
     if (frameTime > 0.25)
       frameTime = 0.25;
+    
+    // Apply speed multiplier to accumulating time
+    frameTime *= speedMultiplier;
+
     accumulator += frameTime;
 
     // Fixed timestep update

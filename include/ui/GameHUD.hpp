@@ -18,4 +18,5 @@ private:
     std::vector<Subscription> eventTokens;
 
     bool isPaused = false;
+    double currentSpeed = 1.0;
 };

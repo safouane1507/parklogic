@@ -1,6 +1,7 @@
 #include "core/Application.hpp"
 #include "core/Logger.hpp"
 #include "events/WindowEvents.hpp"
+#include "events/GameEvents.hpp"
 
 Application::Application() {
   Logger::Info("Application Starting...");
@@ -21,6 +22,18 @@ Application::Application() {
     Logger::Info("Window Close Event Received - Stopping Loop");
     isRunning = false;
   });
+
+  // Subscribe to Simulation Speed Changes
+  eventTokens.push_back(eventBus->subscribe<SimulationSpeedChangedEvent>([this](const SimulationSpeedChangedEvent &e) {
+    gameLoop->setSpeedMultiplier(e.speedMultiplier);
+  }));
+
+  // Subscribe to Scene Changes to reset speed
+  eventTokens.push_back(eventBus->subscribe<SceneChangeEvent>([this](const SceneChangeEvent &e) {
+    if (e.newScene != SceneType::Game) {
+      gameLoop->setSpeedMultiplier(1.0);
+    }
+  }));
 }
 
 void Application::run() {

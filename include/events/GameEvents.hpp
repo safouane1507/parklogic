@@ -73,3 +73,7 @@ struct CarFinishedParkingEvent {
 struct CarDespawnEvent {
   class Car *car;
 };
+
+struct SimulationSpeedChangedEvent {
+  double speedMultiplier;
+};

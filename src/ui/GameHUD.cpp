@@ -13,6 +13,20 @@ GameHUD::GameHUD(std::shared_ptr<EventBus> bus) : eventBus(bus) {
     spawnBtn->setOnClick([this]() { eventBus->publish(SpawnCarRequestEvent{}); });
     uiManager.add(spawnBtn);
 
+    auto speedBtn = std::make_shared<UIButton>(Vector2{10, 150}, Vector2{150, 40}, "Speed: 1.0x", eventBus);
+    speedBtn->setOnClick([this, speedBtn]() {
+        currentSpeed += 0.5;
+        if (currentSpeed > 5.0) {
+            currentSpeed = 1.0;
+        }
+        eventBus->publish(SimulationSpeedChangedEvent{currentSpeed});
+        // Update button text
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "Speed: %.1fx", currentSpeed);
+        speedBtn->setText(buffer);
+    });
+    uiManager.add(speedBtn);
+
     // Subscribe to Pause Events to toggle pause text visibility
     eventTokens.push_back(eventBus->subscribe<GamePausedEvent>([this](const GamePausedEvent&) {
         isPaused = true;
