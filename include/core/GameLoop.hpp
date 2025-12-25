@@ -17,11 +17,11 @@ public:
    * @param running Function that returns true if the loop should continue.
    */
   void run(std::function<void(double)> update, std::function<void()> render, std::function<bool()> running);
-  
+
   /**
-    * @brief Sets the speed multiplier for the simulation.
-    * @param speed The speed multiplier (e.g., 1.0 for normal speed, 2.0 for double speed).
-    */
+   * @brief Sets the speed multiplier for the simulation.
+   * @param speed The speed multiplier (e.g., 1.0 for normal speed, 2.0 for double speed).
+   */
   void setSpeedMultiplier(double speed) { speedMultiplier = speed; }
 
 private:

@@ -3,8 +3,8 @@
 #include "raylib.h"
 #include <deque>
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 class World;
 
@@ -15,8 +15,8 @@ class World;
  * The Car class implements steering behaviors (seek) to navigate through waypoints.
  * It supports collision avoidance and dynamic waypoint generation.
  */
-#include "entities/map/Waypoint.hpp"
 #include "entities/map/Modules.hpp"
+#include "entities/map/Waypoint.hpp"
 
 class Car : public Entity {
 public:
@@ -52,12 +52,7 @@ public:
   void draw() override;
 
   // --- State Management ---
-  enum class CarState {
-      DRIVING,
-      ALIGNING,
-      PARKED,
-      EXITING
-  };
+  enum class CarState { DRIVING, ALIGNING, PARKED, EXITING };
 
   CarState getState() const { return state; }
   void setState(CarState newState) { state = newState; }
@@ -71,10 +66,10 @@ public:
 
   /**
    * @brief Sets the entire path of waypoints.
-   * 
+   *
    * @param path Vector of waypoints.
    */
-  void setPath(const std::vector<Waypoint>& path);
+  void setPath(const std::vector<Waypoint> &path);
 
   /**
    * @brief Clears all waypoints.
@@ -86,30 +81,29 @@ public:
   void setVelocity(Vector2 v) { velocity = v; }
 
   bool isReadyToLeave() const { return state == CarState::PARKED && parkingTimer <= 0.0f; }
-  
+
   bool hasArrived() const { return waypoints.empty(); }
 
   // Context for Parking
   // Used to generate the exit path.
-  void setParkingContext(const Module* fac, const Spot& spot, int spotIndex);
-  const Module* getParkedFacility() const { return parkedFacility; }
-  const Spot& getParkedSpot() const { return parkedSpot; }
+  void setParkingContext(const Module *fac, const Spot &spot, int spotIndex);
+  const Module *getParkedFacility() const { return parkedFacility; }
+  const Spot &getParkedSpot() const { return parkedSpot; }
   int getParkedSpotIndex() const { return parkedSpotIndex; }
 
 private:
   Vector2 position;
   Vector2 velocity;
   Vector2 acceleration;
-  const World *world;
-  
+
   CarState state = CarState::DRIVING;
   float parkingTimer = 0.0f;
-  float targetRotation = 0.0f; 
+  float targetRotation = 0.0f;
   float currentRotation = 0.0f; // degrees, for smooth rendering
-  
-  const Module* parkedFacility = nullptr;
-  Spot parkedSpot = {{0,0}, 0.0f, -1};
-  int parkedSpotIndex = -1; 
+
+  const Module *parkedFacility = nullptr;
+  Spot parkedSpot = {{0, 0}, 0.0f, -1};
+  int parkedSpotIndex = -1;
 
   float maxSpeed;
   float maxForce;
@@ -133,30 +127,33 @@ private:
    *
    * @param wp The target waypoint.
    */
-  void seek(const Waypoint& wp);
+  void seek(const Waypoint &wp);
   std::string textureName;
 
   // New Members for Traffic Overhaul
 public:
-  enum class Priority { PRIORITY_PRICE, PRIORITY_DISTANCE }; // Renamed from PRICE/DISTANCE to avoid potential macros? No, just good practice.
-  
+  enum class Priority {
+    PRIORITY_PRICE,
+    PRIORITY_DISTANCE
+  }; // Renamed from PRICE/DISTANCE to avoid potential macros? No, just good practice.
+
   Priority getPriority() const { return priority; }
   void setPriority(Priority p) { priority = p; }
-  
+
   bool getEnteredFromLeft() const { return enteredFromLeft; }
   void setEnteredFromLeft(bool left) { enteredFromLeft = left; }
-  
+
   CarType getType() const { return type; }
-  
+
   void charge(float amount);
   float getBatteryLevel() const { return batteryLevel; }
-  
+
   void setParkingDuration(float duration) { parkingDuration = duration; }
 
 private:
   CarType type;
   Priority priority = Priority::PRIORITY_DISTANCE; // Default
-  bool enteredFromLeft = true; // Default
-  float batteryLevel = 100.0f; // 0-100%
-  float parkingDuration = 0.0f; // Assigned when parking starts
+  bool enteredFromLeft = true;                     // Default
+  float batteryLevel = 100.0f;                     // 0-100%
+  float parkingDuration = 0.0f;                    // Assigned when parking starts
 };

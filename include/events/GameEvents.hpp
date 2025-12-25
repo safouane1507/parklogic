@@ -50,7 +50,7 @@ struct SpawnCarEvent {};
 
 struct CycleAutoSpawnLevelEvent {};
 struct AutoSpawnLevelChangedEvent {
-    int newLevel;
+  int newLevel;
 };
 
 struct SpawnCarRequestEvent {};
@@ -58,8 +58,8 @@ struct SpawnCarRequestEvent {};
 struct CreateCarEvent {
   Vector2 position;
   Vector2 velocity; // Initial velocity (sets heading)
-  int carType; // 0: Combustion, 1: Electric
-  int priority; // 0: Price, 1: Distance
+  int carType;      // 0: Combustion, 1: Electric
+  int priority;     // 0: Price, 1: Distance
   bool enteredFromLeft;
 };
 

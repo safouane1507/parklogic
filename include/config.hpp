@@ -1,5 +1,13 @@
 #pragma once
 
+/**
+ * @file config.hpp
+ * @brief Global configuration constants.
+ *
+ * Contains compile-time constants for window settings, unit conversion (Pixels <-> Meters),
+ * AI behavior/tuning, battery logic, and spawn rates.
+ */
+
 namespace Config {
 constexpr const char *WINDOW_TITLE = "ParkLogic"; ///< Window Title
 
@@ -25,10 +33,14 @@ constexpr int TARGET_FPS = 60;       ///< Target frames per second
 constexpr bool VSYNC_ENABLED = true; ///< Vertical sync flag
 
 namespace CarAI {
+/**
+ * @struct AIPhase
+ * @brief Parameters for car behavior during different navigation phases.
+ */
 struct AIPhase {
-  float speedFactor;    // % of max speed
-  float tolerance;      // Waypoint clearance radius
-  float correctionStep; // Distance between correction points (Meters)
+  float speedFactor;    ///< Multiplier of max speed (0.0 to 1.0).
+  float tolerance;      ///< Distance to waypoint to consider it "reached".
+  float correctionStep; ///< Distance interval for path smoothing.
 };
 
 namespace Phases {

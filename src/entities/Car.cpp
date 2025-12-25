@@ -8,14 +8,21 @@
 #include "core/AssetManager.hpp"
 
 /**
+ * @file Car.cpp
+ * @brief Implementation of the Car entity.
+ *
+ * Handles physics integration, steering behaviors (acceleration, velocity),
+ * collision avoidance, and state management (Driving, Parking, etc.).
+ */
+
+/**
  * @brief Constructs a new Car object.
  *
  * @param startPos The initial position of the car (in meters).
  * @param world Pointer to the world environment for boundary checking.
  */
-Car::Car(Vector2 startPos, const World *world, Vector2 initialVelocity, CarType type)
-    : position(startPos), velocity(initialVelocity), acceleration{0, 0}, world(world), maxSpeed(15.0f), maxForce(60.0f),
-      type(type) {
+Car::Car(Vector2 startPos, const World * /*world*/, Vector2 initialVelocity, CarType type)
+    : position(startPos), velocity(initialVelocity), acceleration{0, 0}, maxSpeed(15.0f), maxForce(60.0f), type(type) {
 
   // Pick visual based on type
   int variant = GetRandomValue(1, 3);
@@ -57,10 +64,16 @@ void Car::update(double dt) { updateWithNeighbors(dt, nullptr); }
 // In Car.cpp
 
 /**
- * @brief Updates the car's state with awareness of other cars.
+ * @brief Updates the car's state with awareness of neighbors.
  *
- * @param dt Delta time in seconds.
- * @param cars Pointer to the list of other cars for collision avoidance.
+ * This function handles the core AI logic:
+ * 1. State Management (Static states like PARKED).
+ * 2. Path Following (Seek behavior).
+ * 3. Collision Avoidance (Braking and Steering).
+ * 4. Physics Integration (Velocity/Position updates).
+ *
+ * @param dt Delta time.
+ * @param cars List of other cars for collision checks.
  */
 void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>> *cars) {
   // 1. Handle Static States

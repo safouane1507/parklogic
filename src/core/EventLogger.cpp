@@ -40,4 +40,48 @@ EventLogger::EventLogger(std::shared_ptr<EventBus> bus) : eventBus(bus) {
 
   subscriptions.push_back(eventBus->subscribe<CameraZoomEvent>(
       [](const CameraZoomEvent &e) { Logger::Info("Event: CameraZoomEvent [Delta: {}]", e.zoomDelta); }));
+
+  subscriptions.push_back(eventBus->subscribe<GenerateWorldEvent>(
+      [](const GenerateWorldEvent &) { Logger::Info("Event: GenerateWorldEvent"); }));
+
+  subscriptions.push_back(eventBus->subscribe<WorldBoundsEvent>(
+      [](const WorldBoundsEvent &e) { Logger::Info("Event: WorldBoundsEvent [W: {}, H: {}]", e.width, e.height); }));
+
+  subscriptions.push_back(eventBus->subscribe<ToggleDashboardEvent>(
+      [](const ToggleDashboardEvent &) { Logger::Info("Event: ToggleDashboardEvent"); }));
+
+  subscriptions.push_back(
+      eventBus->subscribe<SpawnCarEvent>([](const SpawnCarEvent &) { Logger::Info("Event: SpawnCarEvent"); }));
+
+  subscriptions.push_back(eventBus->subscribe<CycleAutoSpawnLevelEvent>(
+      [](const CycleAutoSpawnLevelEvent &) { Logger::Info("Event: CycleAutoSpawnLevelEvent"); }));
+
+  subscriptions.push_back(eventBus->subscribe<AutoSpawnLevelChangedEvent>([](const AutoSpawnLevelChangedEvent &e) {
+    Logger::Info("Event: AutoSpawnLevelChangedEvent [Level: {}]", e.newLevel);
+  }));
+
+  subscriptions.push_back(eventBus->subscribe<SpawnCarRequestEvent>(
+      [](const SpawnCarRequestEvent &) { Logger::Info("Event: SpawnCarRequestEvent"); }));
+
+  subscriptions.push_back(eventBus->subscribe<CreateCarEvent>(
+      [](const CreateCarEvent &e) { Logger::Info("Event: CreateCarEvent [Type: {}]", e.carType); }));
+
+  subscriptions.push_back(
+      eventBus->subscribe<CarSpawnedEvent>([](const CarSpawnedEvent &) { Logger::Info("Event: CarSpawnedEvent"); }));
+
+  subscriptions.push_back(eventBus->subscribe<AssignPathEvent>(
+      [](const AssignPathEvent &e) { Logger::Info("Event: AssignPathEvent [PathSize: {}]", e.path.size()); }));
+
+  subscriptions.push_back(eventBus->subscribe<CarFinishedParkingEvent>(
+      [](const CarFinishedParkingEvent &) { Logger::Info("Event: CarFinishedParkingEvent"); }));
+
+  subscriptions.push_back(
+      eventBus->subscribe<CarDespawnEvent>([](const CarDespawnEvent &) { Logger::Info("Event: CarDespawnEvent"); }));
+
+  subscriptions.push_back(eventBus->subscribe<SimulationSpeedChangedEvent>([](const SimulationSpeedChangedEvent &e) {
+    Logger::Info("Event: SimulationSpeedChangedEvent [Mul: {}]", e.speedMultiplier);
+  }));
+
+  subscriptions.push_back(eventBus->subscribe<EntitySelectedEvent>(
+      [](const EntitySelectedEvent &e) { Logger::Info("Event: EntitySelectedEvent [Type: {}]", (int)e.type); }));
 }

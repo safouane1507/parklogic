@@ -5,6 +5,14 @@
 #include <algorithm>
 #include <stdexcept>
 
+/**
+ * @file Window.cpp
+ * @brief Implementation of the Window logic.
+ *
+ * Handles Raylib initialization, render texture management (for logical resolution),
+ * and maintaining aspect ratio during resizing.
+ */
+
 Window::Window(std::shared_ptr<EventBus> bus) : eventBus(bus), scale(1.0f), offsetX(0.0f), offsetY(0.0f) {
 
   initRaylib();

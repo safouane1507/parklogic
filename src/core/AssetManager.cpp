@@ -1,6 +1,11 @@
 #include "core/AssetManager.hpp"
 #include "core/Logger.hpp"
 
+/**
+ * @file AssetManager.cpp
+ * @brief Implementation of AssetManager.
+ */
+
 AssetManager::~AssetManager() { UnloadAll(); }
 
 void AssetManager::LoadTexture(const std::string &name, const std::string &path) {

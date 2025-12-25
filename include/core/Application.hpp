@@ -58,7 +58,7 @@ private:
 
   bool isRunning = true; ///< Flag indicating if the application is running.
 
-  Subscription closeEventToken; ///< Token for the window close event subscription.
+  Subscription closeEventToken;          ///< Token for the window close event subscription.
   std::vector<Subscription> eventTokens; ///< Tokens for other event subscriptions.
 
   std::unique_ptr<EventLogger> eventLogger; ///< Logger for debugging events.

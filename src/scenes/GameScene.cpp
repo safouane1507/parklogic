@@ -10,6 +10,14 @@
 #include "ui/GameHUD.hpp"
 #include <format>
 
+/**
+ * @file GameScene.cpp
+ * @brief Implementation of the specific Game Scene.
+ *
+ * Manages the gameplay state, including entity management, systems initialization,
+ * and the main game update/draw logic.
+ */
+
 GameScene::GameScene(std::shared_ptr<EventBus> bus, MapConfig config) : eventBus(bus), config(config) {}
 
 GameScene::~GameScene() { Logger::Info("GameScene Destroyed"); }
@@ -156,14 +164,12 @@ void GameScene::update(double dt) {
 
 void GameScene::draw() {
   handleInput();
-  
+
   // Create a render camera that applies the PPM scaling
   eventBus->publish(BeginCameraEvent{});
   ClearBackground(RAYWHITE);
 
   eventBus->publish(DrawWorldEvent{});
-
-  eventBus->publish(EndCameraEvent{});
 
   eventBus->publish(EndCameraEvent{});
 

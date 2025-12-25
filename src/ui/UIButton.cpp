@@ -1,6 +1,11 @@
 #include "ui/UIButton.hpp"
 #include "events/InputEvents.hpp"
 
+/**
+ * @file UIButton.cpp
+ * @brief Implementation of a clickable UI button.
+ */
+
 UIButton::UIButton(Vector2 pos, Vector2 sz, const std::string &txt, std::shared_ptr<EventBus> bus)
     : UIElement(pos, sz, bus), text(txt) {
 

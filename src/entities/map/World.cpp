@@ -5,6 +5,13 @@
 #include "raylib.h"
 #include <cmath>
 
+/**
+ * @file World.cpp
+ * @brief Implementation of the World entity.
+ *
+ * Handles background rendering (tiling) and global map visualization (grid, overlay).
+ */
+
 World::World(float width, float height) : width(width), height(height), showGrid(false) {
   // Load Textures
   auto &AM = AssetManager::Get();
@@ -114,13 +121,13 @@ void World::drawMask() {
 
   // Top
   DrawRectangleRec({-hugeMargin, -hugeMargin, width + 2 * hugeMargin, hugeMargin}, maskColor);
-  
+
   // Bottom
   DrawRectangleRec({-hugeMargin, height, width + 2 * hugeMargin, hugeMargin}, maskColor);
-  
+
   // Left
   DrawRectangleRec({-hugeMargin, 0, hugeMargin, height}, maskColor);
-  
+
   // Right
   DrawRectangleRec({width, 0, hugeMargin, height}, maskColor);
 }

@@ -1,29 +1,43 @@
 #pragma once
-#include "ui/UIElement.hpp"
-#include "core/EventBus.hpp"
+
+/**
+ * @file DashboardOverlay.hpp
+ * @brief HUD Debug/Info panel.
+ */
 #include "core/EntityManager.hpp"
+#include "core/EventBus.hpp"
 #include "events/GameEvents.hpp"
+#include "ui/UIElement.hpp"
 #include <memory>
 #include <vector>
 
+/**
+ * @class DashboardOverlay
+ * @brief Displays real-time debug information and entity details.
+ *
+ * Supports displaying:
+ * - General Simulator stats (FPS, Entity count).
+ * - Selected Car details.
+ * - Facility occupancy and economics.
+ */
 class DashboardOverlay : public UIElement {
 public:
-    DashboardOverlay(std::shared_ptr<EventBus> bus, EntityManager* entityManager);
-    ~DashboardOverlay();
+  DashboardOverlay(std::shared_ptr<EventBus> bus, EntityManager *entityManager);
+  ~DashboardOverlay();
 
-    void update(double dt) override;
-    void draw() override;
+  void update(double dt) override;
+  void draw() override;
 
 private:
-    EntityManager* entityManager;
-    std::vector<Subscription> eventTokens; 
+  EntityManager *entityManager;
+  std::vector<Subscription> eventTokens;
 
-    EntitySelectedEvent currentSelection;
+  EntitySelectedEvent currentSelection;
 
-    void drawGeneralInfo(int x, int y, int width);
-    void drawCarInfo(int x, int y, int width);
-    void drawFacilityInfo(int x, int y, int width);
-    void drawSpotInfo(int x, int y, int width);
+  void drawGeneralInfo(int x, int y, int width);
+  void drawCarInfo(int x, int y, int width);
+  void drawFacilityInfo(int x, int y, int width);
+  void drawSpotInfo(int x, int y, int width);
 
-    bool visible = true;
+  bool visible = true;
 };

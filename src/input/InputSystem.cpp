@@ -1,6 +1,11 @@
 #include "input/InputSystem.hpp"
 #include "events/InputEvents.hpp"
 
+/**
+ * @file InputSystem.cpp
+ * @brief Implementation of InputSystem.
+ */
+
 InputSystem::InputSystem(std::shared_ptr<EventBus> bus, const Window &win) : eventBus(bus), window(win) {}
 
 void InputSystem::update() {

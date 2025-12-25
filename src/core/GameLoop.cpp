@@ -2,6 +2,19 @@
 #include "config.hpp"
 #include "raylib.h"
 
+/**
+ * @file GameLoop.cpp
+ * @brief Implementation of the fixed-timestep game loop.
+ */
+
+/**
+ * @brief Runs the game loop.
+ *
+ * Implementation of the "Fix Your Timestep" pattern.
+ * - Accumulates elapsed time in a buffer.
+ * - Consumes time in fixed slices (dt) for logic updates (Physics, AI).
+ * - Renders once per frame using the remaining state.
+ */
 void GameLoop::run(std::function<void(double)> update, std::function<void()> render, std::function<bool()> running) {
 
   const double dt = Config::FIXED_DELTA_TIME;
@@ -16,7 +29,7 @@ void GameLoop::run(std::function<void(double)> update, std::function<void()> ren
     // Cap frame time to avoid spiral of death
     if (frameTime > 0.25)
       frameTime = 0.25;
-    
+
     // Apply speed multiplier to accumulating time
     frameTime *= speedMultiplier;
 

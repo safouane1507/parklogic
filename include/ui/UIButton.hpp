@@ -1,4 +1,9 @@
 #pragma once
+
+/**
+ * @file UIButton.hpp
+ * @brief Simple UI Button component.
+ */
 #include "ui/UIElement.hpp"
 #include <functional>
 #include <string>
