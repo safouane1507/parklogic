@@ -116,17 +116,20 @@ void DashboardOverlay::drawGeneralInfo(int x, int y, int width) {
 
     if (entityManager) {
         auto& modules = entityManager->getModules();
-        totalFacilities = modules.size();
+        // totalFacilities = modules.size(); // Incorrect, includes roads
         
         for(const auto& m : modules) {
-            auto counts = m->getSpotCounts();
-            totalSpots += (counts.free + counts.reserved + counts.occupied);
-            occupiedSpots += counts.occupied; // Should we count reserved as occupied? PROMPT: "occupancy rate (both counting and not counting reserved spots)"
-            
-            // Determine type for breakdown
             auto type = m->getType();
             bool isCharging = (type == ModuleType::SMALL_CHARGING || type == ModuleType::LARGE_CHARGING);
             bool isParking = (type == ModuleType::SMALL_PARKING || type == ModuleType::LARGE_PARKING);
+
+            if (!isCharging && !isParking) continue; // Skip roads/etc
+            
+            totalFacilities++;
+
+            auto counts = m->getSpotCounts();
+            totalSpots += (counts.free + counts.reserved + counts.occupied);
+            occupiedSpots += counts.occupied; 
             
             if(isCharging) {
                 chargingStations++;
