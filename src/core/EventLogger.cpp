@@ -38,10 +38,6 @@ EventLogger::EventLogger(std::shared_ptr<EventBus> bus) : eventBus(bus) {
   subscriptions.push_back(
       eventBus->subscribe<WindowCloseEvent>([](const WindowCloseEvent &) { Logger::Info("Event: WindowCloseEvent"); }));
 
-  subscriptions.push_back(eventBus->subscribe<ToggleDebugOverlayEvent>([](const ToggleDebugOverlayEvent &e) {
-    Logger::Info("Event: ToggleDebugOverlayEvent [Enabled: {}]", e.enabled);
-  }));
-
   subscriptions.push_back(eventBus->subscribe<CameraZoomEvent>(
       [](const CameraZoomEvent &e) { Logger::Info("Event: CameraZoomEvent [Delta: {}]", e.zoomDelta); }));
 }

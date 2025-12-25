@@ -41,7 +41,7 @@ void MapConfigScene::load() {
     });
 
     incBtn->setOnClick([&value, dispBtn, label]() {
-      if (value < 20)
+      if (value < 5)
         value++;
       dispBtn->setText(label + ": " + std::to_string(value));
     });

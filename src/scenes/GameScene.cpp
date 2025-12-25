@@ -1,8 +1,10 @@
 #include "scenes/GameScene.hpp"
+#include "config.hpp"
 #include "core/EntityManager.hpp"
 #include "core/Logger.hpp"
 #include "events/GameEvents.hpp"
 #include "events/InputEvents.hpp"
+#include "raymath.h"
 #include "systems/CameraSystem.hpp"
 #include "systems/TrafficSystem.hpp"
 #include "ui/GameHUD.hpp"
@@ -19,7 +21,7 @@ void GameScene::load() {
   cameraSystem = std::make_unique<CameraSystem>(eventBus);
   entityManager = std::make_unique<EntityManager>(eventBus);
   trafficSystem = std::make_unique<TrafficSystem>(eventBus, *entityManager);
-  gameHUD = std::make_unique<GameHUD>(eventBus);
+  gameHUD = std::make_unique<GameHUD>(eventBus, entityManager.get());
 
   // Generate World via Event
   eventBus->publish(GenerateWorldEvent{config});
@@ -52,16 +54,82 @@ void GameScene::load() {
   eventTokens.push_back(eventBus->subscribe<GamePausedEvent>([this](const GamePausedEvent &) { isPaused = true; }));
   eventTokens.push_back(eventBus->subscribe<GameResumedEvent>([this](const GameResumedEvent &) { isPaused = false; }));
 
+  // Mouse Click Handling
+  eventTokens.push_back(eventBus->subscribe<MouseClickEvent>([this](const MouseClickEvent &e) {
+    if (e.down && e.button == MOUSE_BUTTON_LEFT) {
+      // Construct the Render Camera with PPM scaling (same as CameraSystem uses for drawing)
+      Camera2D renderCamera = cameraSystem->getCamera();
+      renderCamera.zoom *= Config::PPM;
+
+      // e.position is already in Logical Coordinates (thanks to InputSystem)
+      Vector2 worldPos = GetScreenToWorld2D(e.position, renderCamera);
+
+      EntitySelectedEvent selectionEvent;
+      selectionEvent.type = SelectionType::GENERAL; // Default
+
+      bool found = false;
+
+      // 1. Check Cars
+      if (entityManager) {
+        for (const auto &car : entityManager->getCars()) {
+          Vector2 pos = car->getPosition();
+          // Check distance in World Space (Meters)
+          // Car radius ~0.5m - 1.0m?
+          // Using 0.8m as clickable radius
+          if (CheckCollisionPointCircle(worldPos, pos, 0.8f)) {
+            selectionEvent.type = SelectionType::CAR;
+            selectionEvent.car = car.get();
+            found = true;
+            break;
+          }
+        }
+
+        // 2. Check Facilities
+        if (!found) {
+          for (const auto &mod : entityManager->getModules()) {
+            Rectangle rec = {mod->worldPosition.x, mod->worldPosition.y, mod->getWidth(), mod->getHeight()};
+
+            if (CheckCollisionPointRec(worldPos, rec)) {
+              selectionEvent.type = SelectionType::FACILITY;
+              selectionEvent.module = mod.get();
+              found = true;
+
+              // 3. Check Spots logic
+              int bestSpotIndex = -1;
+              float minDistSq = 1000000.0f;
+              // TUNING: Spot click radius in meters
+              float threshold = 4.0f;
+              float thresholdSq = threshold * threshold;
+
+              for (size_t i = 0; i < mod->getSpotCount(); i++) {
+                Spot s = mod->getSpot(i);
+                Vector2 spotWorldPos = {mod->worldPosition.x + s.localPosition.x,
+                                        mod->worldPosition.y + s.localPosition.y};
+
+                float dSq = Vector2DistanceSqr(worldPos, spotWorldPos);
+                if (dSq < thresholdSq && dSq < minDistSq) {
+                  minDistSq = dSq;
+                  bestSpotIndex = (int)i;
+                }
+              }
+
+              if (bestSpotIndex != -1) {
+                selectionEvent.type = SelectionType::SPOT;
+                selectionEvent.module = mod.get();
+                selectionEvent.spotIndex = bestSpotIndex;
+              }
+
+              break;
+            }
+          }
+        }
+      }
+
+      eventBus->publish(selectionEvent);
+    }
+  }));
+
   // Camera Zoom is now handled by CameraSystem
-
-  // 1. Handle Spawn Request
-  // Handled by TrafficSystem
-
-  // 2. Handle Path Assignment (Map Logic)
-  // Handled by TrafficSystem
-
-  // 3. Apply Path to Car
-  // Handled by EntityManager
 }
 
 void GameScene::unload() {

@@ -35,9 +35,8 @@ struct DrawWorldEvent {};
 
 struct GamePausedEvent {};
 struct GameResumedEvent {};
-struct ToggleDebugOverlayEvent {
-  bool enabled;
-};
+
+struct ToggleDashboardEvent {};
 
 struct CameraZoomEvent {
   float zoomDelta;
@@ -78,4 +77,13 @@ struct CarDespawnEvent {
 
 struct SimulationSpeedChangedEvent {
   double speedMultiplier;
+};
+
+enum class SelectionType { NONE, CAR, FACILITY, SPOT, GENERAL };
+
+struct EntitySelectedEvent {
+  SelectionType type = SelectionType::GENERAL;
+  class Car *car = nullptr;
+  class Module *module = nullptr;
+  int spotIndex = -1;
 };

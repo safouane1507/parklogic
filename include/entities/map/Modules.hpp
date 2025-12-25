@@ -99,6 +99,8 @@ public:
 
   // Get occupancy percentage (0.0 to 1.0)
   float getOccupancyPercentage() const;
+
+  size_t getSpotCount() const { return spots.size(); }
   
   // Helper to determine facility orientation
   virtual bool isUp() const { return false; }

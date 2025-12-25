@@ -1,19 +1,19 @@
 #include "ui/GameHUD.hpp"
-#include "ui/DebugOverlay.hpp"
+#include "ui/DashboardOverlay.hpp"
 #include "ui/UIButton.hpp"
 #include "events/GameEvents.hpp"
 #include "config.hpp"
 #include "raylib.h"
 
-GameHUD::GameHUD(std::shared_ptr<EventBus> bus) : eventBus(bus) {
+GameHUD::GameHUD(std::shared_ptr<EventBus> bus, EntityManager* entityManager) : eventBus(bus) {
     // Setup UI Elements
-    uiManager.add(std::make_shared<DebugOverlay>(eventBus));
+    uiManager.add(std::make_shared<DashboardOverlay>(eventBus, entityManager));
 
-    auto spawnBtn = std::make_shared<UIButton>(Vector2{10, 100}, Vector2{150, 40}, "Spawn Car", eventBus);
+    auto spawnBtn = std::make_shared<UIButton>(Vector2{10, 10}, Vector2{150, 40}, "Spawn Car", eventBus);
     spawnBtn->setOnClick([this]() { eventBus->publish(SpawnCarRequestEvent{}); });
     uiManager.add(spawnBtn);
 
-    auto speedBtn = std::make_shared<UIButton>(Vector2{10, 150}, Vector2{150, 40}, "Speed: 1.0x", eventBus);
+    auto speedBtn = std::make_shared<UIButton>(Vector2{10, 60}, Vector2{150, 40}, "Speed: 1.0x", eventBus);
     speedBtn->setOnClick([this, speedBtn]() {
         currentSpeed += 0.5;
         if (currentSpeed > 5.0) {

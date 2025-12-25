@@ -4,9 +4,11 @@
 #include <memory>
 #include <vector>
 
+class EntityManager;
+
 class GameHUD {
 public:
-    explicit GameHUD(std::shared_ptr<EventBus> bus);
+    GameHUD(std::shared_ptr<EventBus> bus, EntityManager* entityManager);
     ~GameHUD();
 
     void update(double dt);
