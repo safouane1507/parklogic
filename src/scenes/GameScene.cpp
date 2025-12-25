@@ -35,7 +35,6 @@ void GameScene::load() {
   eventBus->publish(GenerateWorldEvent{config});
 
   // Setup Camera
-  // Setup Camera
   cameraSystem->setZoom(1.0f);
 
   // Camera setup is now handled via WorldBoundsEvent in CameraSystem
