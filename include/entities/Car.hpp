@@ -48,11 +48,16 @@ public:
 
   /**
    * @brief Draws the car and its debug info (waypoints, velocity).
+   * @param showPath Whether to draw the path lines.
    */
-  void draw() override;
+  void draw(bool showPath);
+  void draw() override { draw(false); }
 
   // --- State Management ---
   enum class CarState { DRIVING, ALIGNING, PARKED, EXITING };
+
+  bool isSelected() const { return selected; }
+  void setSelected(bool s) { selected = s; }
 
   CarState getState() const { return state; }
   void setState(CarState newState) { state = newState; }
@@ -156,4 +161,5 @@ private:
   bool enteredFromLeft = true;                     // Default
   float batteryLevel = 100.0f;                     // 0-100%
   float parkingDuration = 0.0f;                    // Assigned when parking starts
+  bool selected = false;
 };

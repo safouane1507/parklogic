@@ -61,4 +61,6 @@ private:
   std::unique_ptr<World> world;
   std::vector<std::unique_ptr<Module>> modules;
   std::vector<std::unique_ptr<Car>> cars;
+  
+  bool dashboardVisible = false;
 };

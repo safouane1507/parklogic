@@ -223,9 +223,9 @@ void Car::updateWithNeighbors(double dt, const std::vector<std::unique_ptr<Car>>
 /**
  * @brief Draws the car, its velocity vector, and its current waypoints.
  */
-void Car::draw() {
+void Car::draw(bool showPath) {
   // Draw Waypoints and paths (in Meters)
-  if (!waypoints.empty()) {
+  if (showPath && !waypoints.empty()) {
     for (size_t i = 0; i < waypoints.size(); ++i) {
       Vector2 wpPos = waypoints[i].position;
       // Radius: 0.25 meters

@@ -59,6 +59,23 @@ EntityManager::EntityManager(std::shared_ptr<EventBus> bus) : eventBus(bus) {
       e.car->setPath(e.path);
     }
   }));
+
+  // Track Dashboard State
+  eventTokens.push_back(eventBus->subscribe<ToggleDashboardEvent>([this](const ToggleDashboardEvent&) {
+      this->dashboardVisible = !this->dashboardVisible;
+  }));
+
+  // Track Selection
+  eventTokens.push_back(eventBus->subscribe<EntitySelectedEvent>([this](const EntitySelectedEvent& e) {
+      // Logic matching DashboardOverlay: specific selection forces visibility
+      if (e.type != SelectionType::GENERAL) {
+          this->dashboardVisible = true;
+      }
+      
+      for(auto& car : cars) {
+          car->setSelected(car.get() == e.car);
+      }
+  }));
 }
 
 EntityManager::~EntityManager() { clear(); }
@@ -87,7 +104,8 @@ void EntityManager::draw() {
   }
 
   for (const auto &car : cars) {
-    car->draw();
+    bool showPath = car->isSelected() && this->dashboardVisible;
+    car->draw(showPath);
   }
 
   // Draw Mask last (Foreground)
