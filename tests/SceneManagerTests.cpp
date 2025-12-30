@@ -38,11 +38,3 @@ TEST_F(SceneManagerTests, HandlesSceneChangeEvent) {
     // Subsequent updates should work
     EXPECT_NO_THROW(manager->update(0.1));
 }
-
-// MapConfig and GameScene might require assets or more complex setup (like Window/Raylib ready),
-// which might fail in headless CI or without assets copied.
-// However, since we are building locally and assets are copied, it *might* work.
-// But GameScene initialization often involves loading textures.
-// If LoadTexture fails (headless), does it crash or just warn?
-// Raylib LoadTexture returns default texture if fails, usually doesn't crash unless code assumes it.
-// We will skip testing GameScene instantiation here to be safe, or try it in GameSceneTests.

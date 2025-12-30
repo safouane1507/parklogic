@@ -20,7 +20,7 @@ Application::Application() {
   backgroundMusic = LoadMusicStream("assets/background_music.mp3");
   if (backgroundMusic.stream.buffer != nullptr) {
     PlayMusicStream(backgroundMusic);
-    SetMusicVolume(backgroundMusic, 0.1f); // نصف مستوى الصوت
+    SetMusicVolume(backgroundMusic, 0.1f); // Low volume level
     musicLoaded = true;
   }
 
@@ -85,7 +85,7 @@ Application::~Application() {
 void Application::run() {
     gameLoop->run(
         [this](double dt) { 
-            // تحديث الموسيقى في كل فريم لضمان استمرارها
+            // Update music stream every frame to ensure it keeps playing
             if (this->musicLoaded) UpdateMusicStream(this->backgroundMusic); 
             this->update(dt); 
         }, 

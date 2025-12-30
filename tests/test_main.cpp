@@ -3,8 +3,8 @@
 #include "entities/Car.hpp"
 #include "entities/map/World.hpp"
 #include "entities/map/Waypoint.hpp"
-#include "entities/map/Modules.hpp"   // ضروري باش نخدمو ب Modules
-#include "systems/PathPlanner.hpp"    // ضروري باش نخدمو ب PathPlanner
+#include "entities/map/Modules.hpp"   // Necessary to work with Modules
+#include "systems/PathPlanner.hpp"    // Necessary to work with PathPlanner
 
 // --- Test Suite 1: Car Logic ---
 
@@ -14,7 +14,7 @@ TEST(CarTest, BatteryLogic) {
 
     EXPECT_FLOAT_EQ(myCar.getBatteryLevel(), 100.0f);
 
-    // نقصو من الشارج
+    // Decrease charge
     myCar.charge(-20.0f);
     EXPECT_FLOAT_EQ(myCar.getBatteryLevel(), 80.0f);
 }
@@ -35,54 +35,54 @@ TEST(CarTest, PrioritySystem) {
 TEST(CarTest, WaypointQueue) {
     Car myCar({0, 0}, nullptr, {0, 0}, Car::CarType::ELECTRIC);
 
-    // فالبداية وصلات (حيت ماعندهاش طريق)
+    // Initially arrived (since it has no path)
     EXPECT_TRUE(myCar.hasArrived());
 
-    // نزيدو Waypoint
+    // Add Waypoint
     Waypoint wp({100.0f, 100.0f}); 
     myCar.addWaypoint(wp);
 
-    // دابا ماخصهاش تكون وصلات
+    // Now it shouldn't have arrived
     EXPECT_FALSE(myCar.hasArrived());
 
-    // نمسحو الطريق
+    // Clear the path
     myCar.clearWaypoints();
     EXPECT_TRUE(myCar.hasArrived());
 }
 
 // 4. Movement Logic (Velocity Update)
 TEST(CarTest, MovementLogic) {
-    // نخلقو طوموبيل واقفة
+    // Create a stationary car
     Car myCar({0, 0}, nullptr, {0, 0}, Car::CarType::COMBUSTION);
     
-    // السرعة فالبداية 0
+    // Initial velocity 0
     EXPECT_FLOAT_EQ(myCar.getVelocity().x, 0.0f);
     EXPECT_FLOAT_EQ(myCar.getVelocity().y, 0.0f);
 
-    // نعطيوها فيتاس (Simulate Acceleration)
+    // Give it velocity (Simulate Acceleration)
     Vector2 newVel = {50.0f, 0.0f};
     myCar.setVelocity(newVel);
 
-    // نتأكدو أن الفيتاس تبدل
+    // Ensure velocity has changed
     EXPECT_FLOAT_EQ(myCar.getVelocity().x, 50.0f);
 
-    // ملاحظة: ما درناش update() هنا حيت update كتحتاج World* (nullptr يقدر يفرقعها)
-    // ولكن testedنا بلي setVelocity خدامة.
+    // Note: we didn't call update() here because update needs World* (nullptr might crash it)
+    // But we tested that setVelocity works.
 }
 
 // --- Test Suite 2: PathPlanner Logic ---
 
-// 5. Generate Path Sanity (واش كيخرج طريق؟)
+// 5. Generate Path Sanity (Does it generate a path?)
 TEST(PathPlannerTest, GeneratePathSanity) {
     // 1. Setup Car
     Car myCar({0, 0}, nullptr, {0, 0}, Car::CarType::COMBUSTION);
 
     // 2. Setup Module (Large Parking Example)
     LargeParking parkingFac(true); // Top parking
-    parkingFac.worldPosition = {200, 200}; // نحطوه فشي بلاصة فالعالم
+    parkingFac.worldPosition = {200, 200}; // Put it somewhere in the world
 
     // 3. Setup Spot
-    // حسب الـ Struct Spot فالكود ديالك: localPosition, orientation, id, state, price
+    // According to the Spot struct in your code: localPosition, orientation, id, state, price
     Spot targetSpot = { {10.0f, 10.0f}, 0.0f, 1, SpotState::FREE, 5.0f };
 
     // 4. Generate Path
@@ -93,11 +93,11 @@ TEST(PathPlannerTest, GeneratePathSanity) {
     EXPECT_GE(path.size(), 2) << "Path should have at least Start and End points";
 }
 
-// 6. Path Accuracy (واش الطريق كتوصل للهدف؟)
+// 6. Path Accuracy (Does the path reach the target?)
 TEST(PathPlannerTest, PathEndsAtTarget) {
     Car myCar({0, 0}, nullptr, {0, 0}, Car::CarType::ELECTRIC);
     
-    // نستعملو SmallChargingStation كمثال
+    // Use SmallChargingStation as an example
     SmallChargingStation charger(false); // Bottom
     charger.worldPosition = {500, 500};
 
@@ -107,14 +107,14 @@ TEST(PathPlannerTest, PathEndsAtTarget) {
     
     ASSERT_FALSE(path.empty());
 
-    // النقطة الأخيرة فالطريق
+    // The last point in the path
     Waypoint finalPoint = path.back();
 
-    // الموقع المتوقع (Global Position = Module Pos + Spot Local Pos)
+    // Expected position (Global Position = Module Pos + Spot Local Pos)
     float expectedX = charger.worldPosition.x + targetSpot.localPosition.x;
     float expectedY = charger.worldPosition.y + targetSpot.localPosition.y;
 
-    // نتأكدو بلي وصلنا (بنسبة خطأ مقبولة 5 متر)
+    // Ensure we arrived (within 5 units error margin)
     EXPECT_NEAR(finalPoint.position.x, expectedX, 5.0f);
     EXPECT_NEAR(finalPoint.position.y, expectedY, 5.0f);
 }

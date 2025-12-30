@@ -1,0 +1,127 @@
+spot data of facilities (each spot has coordinate and an orientation)
+a spot is oriented in a direction means to enter it you must be heading in that direction, ie a spot is oriented up means to enter i should be going/facing up
+
+charging_large_down and small_parking_down :
+size (274*330)
+this has five spots oriented left and five oriented down
+the five oriented left all have the same x
+x = 37 art pixels
+(x,94) orientation: left
+(x,131) orientation: left
+(x,167) orientation: left
+(x,203) orientation: left
+(x,239) orientation: left
+
+the five oriented down have the same y
+y= 292 art pixels
+(90,y) orientation: down
+(126,y) orientation: down
+(162,y) orientation: down
+(198,y) orientation: down
+(234,y) orientation: down
+
+charging_large_up and small_parking_up :
+size (274*330)
+the five oriented left all have the same x
+x = 37 art pixels
+(x, 330 - 94) = (x, 236) orientation: left
+(x, 330 - 131) = (x, 199) orientation: left
+(x, 330 - 167) = (x, 163) orientation: left
+(x, 330 - 203) = (x, 127) orientation: left
+(x, 330 - 239) = (x, 91) orientation: left
+
+the five oriented up have the same y
+y= 330 - 292 = 38 art pixels
+(90,y) orientation: up
+(126,y) orientation: up
+(162,y) orientation: up
+(198,y) orientation: up
+(234,y) orientation: up
+
+charging_small_down :
+size (219*168)
+this one has 5 spots oriented down
+they have the same y
+y= 130 art pixels
+(38,y) orientation: down
+(73,y) orientation: down
+(109,y) orientation: down
+(145,y) orientation: down
+(181,y) orientation: down
+
+charging_small_up :
+size (219*168)
+this one has 5 spots oriented up
+they have the same y
+y= 168 - 130 = 38 art pixels
+(38,y) orientation: up
+(73,y) orientation: up
+(109,y) orientation: up
+(145,y) orientation: up
+(181,y) orientation: up
+
+parking_large_down :
+size (436*363)
+this one has 6 spots oriented left, and 6 oriented right and 8 oriented down
+the spots oriented left all have the same x
+x = 38
+(x,94) orientation: left
+(x,130) orientation: left
+(x,166) orientation: left
+(x,202) orientation: left
+(x,238) orientation: left
+(x,274) orientation: left
+
+the spots oriented right also all have the same x (since they mirror the left ones, they have the same ys as the left ones, just a diff x)
+x = 389
+(x,94) orientation: right
+(x,130) orientation: right
+(x,166) orientation: right
+(x,202) orientation: right
+(x,238) orientation: right
+(x,274) orientation: right
+
+the spots oriented down all have the same y
+y = 325
+(92,y) orientation: down
+(128,y) orientation: down
+(164,y) orientation: down
+(200,y) orientation: down
+(236,y) orientation: down
+(272,y) orientation: down
+(308,y) orientation: down
+(344,y) orientation: down
+
+parking_large_up :
+size (436*363)
+this one has 6 spots oriented left, and 6 oriented right and 8 oriented up
+the spots oriented left all have the same x
+x = 38
+(x, 363 - 94) = (x, 269) orientation: left
+(x, 363 - 130) = (x, 233) orientation: left
+(x, 363 - 166) = (x, 197) orientation: left
+(x, 363 - 202) = (x, 161) orientation: left
+(x, 363 - 238) = (x, 125) orientation: left
+(x, 363 - 274) = (x, 89) orientation: left
+
+the spots oriented right also all have the same x
+x = 389
+(x, 363 - 94) = (x, 269) orientation: right
+(x, 363 - 130) = (x, 233) orientation: right
+(x, 363 - 166) = (x, 197) orientation: right
+(x, 363 - 202) = (x, 161) orientation: right
+(x, 363 - 238) = (x, 125) orientation: right
+(x, 363 - 274) = (x, 89) orientation: right
+
+the spots oriented up all have the same y
+y = 363 - 325 = 38
+(92,y) orientation: up
+(128,y) orientation: up
+(164,y) orientation: up
+(200,y) orientation: up
+(236,y) orientation: up
+(272,y) orientation: up
+(308,y) orientation: up
+(344,y) orientation: up
+
+--------------------------------------------------------------------------------
