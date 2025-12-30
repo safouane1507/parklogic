@@ -5,8 +5,10 @@
 #include "core/Window.hpp"
 #include "input/InputSystem.hpp"
 #include "scenes/SceneManager.hpp"
+#include "raylib.h"
 #include <memory>
 #include <vector>
+#include "config.hpp"
 
 /**
  * @class Application
@@ -16,19 +18,20 @@
  * the window, event bus, input system, scene manager, and game loop. It coordinates
  * the initialization, updating, and rendering of the game.
  */
+class UIButton; 
 class Application {
 public:
   /**
    * @brief Constructs the Application and initializes core systems.
    */
   Application();
+  ~Application();
 
   /**
    * @brief Destructor.
    *
    * Cleans up resources. The Subscription token automatically unsubscribes on destruction.
    */
-  ~Application() = default;
 
   /**
    * @brief Starts the main game loop.
@@ -55,11 +58,15 @@ private:
   std::unique_ptr<GameLoop> gameLoop;         ///< The game loop manager.
   std::unique_ptr<InputSystem> inputSystem;   ///< The input handling system.
   std::unique_ptr<SceneManager> sceneManager; ///< The scene manager.
+  std::unique_ptr<EventLogger> eventLogger; ///< Logger for debugging events.
 
   bool isRunning = true; ///< Flag indicating if the application is running.
-
   Subscription closeEventToken;          ///< Token for the window close event subscription.
   std::vector<Subscription> eventTokens; ///< Tokens for other event subscriptions.
-
-  std::unique_ptr<EventLogger> eventLogger; ///< Logger for debugging events.
+  
+  Music backgroundMusic;
+  bool musicLoaded = false;
+  bool isMuted = false;
+  std::unique_ptr<UIButton> muteButton;
+  
 };

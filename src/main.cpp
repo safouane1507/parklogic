@@ -22,5 +22,7 @@ int main() {
     return -1;
   }
   Logger::Info("Application Exited Cleanly");
+  
   return 0;
+
 }

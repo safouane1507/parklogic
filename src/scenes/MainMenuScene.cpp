@@ -1,4 +1,5 @@
 #include "scenes/MainMenuScene.hpp"
+#include "core/AssetManager.hpp"
 #include "config.hpp"
 #include "events/GameEvents.hpp"
 #include "events/WindowEvents.hpp"
@@ -29,13 +30,10 @@ void MainMenuScene::load() {
 void MainMenuScene::unload() {}
 void MainMenuScene::update(double dt) { ui.update(dt); }
 void MainMenuScene::draw() {
-  ClearBackground(GetColor(0x181818FF)); // Dark background
-
-  const char *title = "ParkLogic";
-  int fontSize = 60;
-  int titleW = MeasureText(title, fontSize);
-  float cx = Config::LOGICAL_WIDTH / 2.0f;
-
-  DrawText(title, (int)(cx - (float)titleW / 2), 100, fontSize, RAYWHITE);
+  Texture2D bg = AssetManager::Get().GetTexture("menu_bg");
+    DrawTexturePro(bg, 
+        { 0, 0, (float)bg.width, (float)bg.height }, 
+        { 0, 0, (float)Config::LOGICAL_WIDTH, (float)Config::LOGICAL_HEIGHT }, 
+        { 0, 0 }, 0.0f, WHITE);
   ui.draw();
 }
