@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 
+class TrackingSystem;
 class GameScene : public IScene {
 public:
   explicit GameScene(std::shared_ptr<EventBus> bus, MapConfig config);
@@ -18,7 +19,7 @@ public:
 
 private:
   void handleInput();
-
+  std::unique_ptr<TrackingSystem> trackingSystem;
   std::shared_ptr<EventBus> eventBus;
   std::vector<Subscription> eventTokens;
 

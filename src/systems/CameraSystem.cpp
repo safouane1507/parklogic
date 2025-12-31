@@ -3,6 +3,7 @@
 #include "core/Logger.hpp"
 #include "events/GameEvents.hpp"
 #include "events/InputEvents.hpp"
+#include "events/TrackingEvents.hpp"
 
 /**
  * @file CameraSystem.cpp
@@ -33,11 +34,15 @@ CameraSystem::CameraSystem(std::shared_ptr<EventBus> bus) : eventBus(bus) {
 
   // Subscribe to Move Event
   eventTokens.push_back(eventBus->subscribe<CameraMoveEvent>([this](const CameraMoveEvent &e) {
+    if (this->isTracking) {
+      camera.target = e.delta;
+    } else {
     // Correct for speed multiplier if this comes from update loop?
     // Actually CameraMoveEvent comes mainly from external (if any).
     // Standard movement is in update() below.
     camera.target.x += e.delta.x;
     camera.target.y += e.delta.y;
+    }
   }));
 
   // Track Keys
@@ -71,6 +76,23 @@ CameraSystem::CameraSystem(std::shared_ptr<EventBus> bus) : eventBus(bus) {
   }));
 
   eventTokens.push_back(eventBus->subscribe<EndCameraEvent>([](const EndCameraEvent &) { EndMode2D(); }));
+
+ // --- نزل الكود الجديد هنا (مكان المحذوف) ---
+  eventTokens.push_back(eventBus->subscribe<TrackingStatusEvent>([this](const TrackingStatusEvent& e) {
+    this->isTracking = e.isTracking;
+    if (!this->isTracking) {
+        // رجوع الزوم للحالة العادية عند التوقف
+        this->camera.zoom = 1.0f; 
+        // إعادة الكاميرا لمنتصف العالم لكي لا تبقى في الفراغ الأبيض
+        if (this->worldWidth > 0 && this->worldHeight > 0) {
+        this->camera.target = { worldWidth / 2.0f, worldHeight / 2.0f };
+        }   
+      } else {
+        // زوم تلقائي عند بدء التتبع
+        this->camera.zoom = 2.5f;
+    }
+  }));
+
 }
 
 CameraSystem::~CameraSystem() { eventTokens.clear(); }
@@ -82,6 +104,8 @@ void CameraSystem::setWorldBounds(float width, float height) {
 }
 
 void CameraSystem::update(double dt) {
+
+  if (isTracking) return;
   // Handle Input
   // Compensate for Simulation Speed so camera moves at Real-Time speed
   float effectiveDt = (float)dt / (float)speedMultiplier;

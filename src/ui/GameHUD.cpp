@@ -1,6 +1,7 @@
 #include "ui/GameHUD.hpp"
 #include "config.hpp"
 #include "events/GameEvents.hpp"
+#include "events/TrackingEvents.hpp"
 #include "raylib.h"
 #include "ui/DashboardOverlay.hpp"
 #include "ui/UIButton.hpp"
@@ -40,6 +41,32 @@ GameHUD::GameHUD(std::shared_ptr<EventBus> bus, EntityManager *entityManager) : 
   auto autoSpawnBtn = std::make_shared<UIButton>(Vector2{10, 110}, Vector2{150, 40}, "Auto: Off", eventBus);
   autoSpawnBtn->setOnClick([this]() { eventBus->publish(CycleAutoSpawnLevelEvent{}); });
   uiManager.add(autoSpawnBtn);
+
+  //------------------------------------------------
+  // definition de traking button
+  // تعريف زر واحد ذكي
+  auto trackBtn = std::make_shared<UIButton>(Vector2{10, 160}, Vector2{150, 40}, "Track New", eventBus);
+
+  trackBtn->setOnClick([this, trackBtn]() { 
+    // إذا كان النص الحالي "Track New" نرسل حدث البدء، وإلا نرسل حدث الإيقاف
+    if (trackBtn->getText() == "Track New") {
+        eventBus->publish(StartTrackingEvent{}); 
+    } else {
+        eventBus->publish(StopTrackingEvent{});
+    }
+  });
+
+  uiManager.add(trackBtn);
+
+  // تحديث نص الزر تلقائياً عند تغيير حالة التتبع في النظام
+  std::weak_ptr<UIButton> weakTrackBtn = trackBtn;
+  eventTokens.push_back(eventBus->subscribe<TrackingStatusEvent>([weakTrackBtn](const TrackingStatusEvent& e) {
+    if (auto btn = weakTrackBtn.lock()) {
+        btn->setText(e.isTracking ? "Untrack" : "Track New");
+    }
+  }));
+
+   //--------------------------------------
 
   // Subscribe to Auto Spawn Level Changes to update text
   eventTokens.push_back(

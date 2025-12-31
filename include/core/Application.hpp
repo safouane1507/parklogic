@@ -52,6 +52,7 @@ private:
    * @brief Renders the current frame.
    */
   void render();
+  void DrawVolumeIcon(Vector2 pos, bool muted);
 
   std::shared_ptr<EventBus> eventBus;         ///< The central event bus for communication.
   std::unique_ptr<Window> window;             ///< The main game window.

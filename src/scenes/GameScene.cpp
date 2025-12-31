@@ -1,4 +1,5 @@
 #include "scenes/GameScene.hpp"
+#include "systems/TrackingSystem.hpp"
 #include "config.hpp"
 #include "core/EntityManager.hpp"
 #include "core/Logger.hpp"
@@ -24,6 +25,8 @@ GameScene::~GameScene() { Logger::Info("GameScene Destroyed"); }
 
 void GameScene::load() {
   Logger::Info("Loading GameScene (Generated World)...");
+
+  trackingSystem = std::make_unique<TrackingSystem>(eventBus);
 
   // Initialize Managers
   cameraSystem = std::make_unique<CameraSystem>(eventBus);

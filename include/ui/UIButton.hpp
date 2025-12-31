@@ -29,6 +29,13 @@ public:
   void update(double dt) override;
   void draw() override;
 
+
+   /**
+   * @brief يرجع النص الحالي للزر.
+   * @return std::string نص الزر.
+   */
+  std::string getText() const { return text; }
+
   /**
    * @brief Sets the button text.
    * @param text The new text to display.

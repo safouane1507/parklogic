@@ -60,4 +60,6 @@ private:
 
   std::set<int> keysDown;
   double speedMultiplier = 1.0;
+
+  bool isTracking = false;
 };

@@ -51,7 +51,7 @@ UIButton::UIButton(Vector2 pos, Vector2 sz, const std::string &buttonText, std::
       } else if (isPressed) {
         // --- Major logic update here ---
         if (clickSoundLoaded) {
-          SetSoundVolume(clickSound, 1.0f); // Ensure the sound is at maximum level
+          SetSoundVolume(clickSound, 0.3f); // Ensure the sound is at maximum level
           StopSound(clickSound);            // Stop any previous button sound (to avoid overlap)
           PlaySound(clickSound);            // Play sound immediately
         }

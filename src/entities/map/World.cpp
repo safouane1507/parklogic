@@ -20,6 +20,10 @@ World::World(float width, float height) : width(width), height(height), showGrid
   AM.LoadTexture("grass3", "assets/grass3.png");
   AM.LoadTexture("grass4", "assets/grass4.png");
 
+  //sound icones
+  //AM.LoadTexture("sound_on", "assets/sound_on.png");
+  //AM.LoadTexture("sound_off", "assets/volume-mute.png");
+
   // Load Module Textures
   AM.LoadTexture("road", "assets/road.png");
   AM.LoadTexture("entrance_up", "assets/entrance_up.png");

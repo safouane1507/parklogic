@@ -30,6 +30,7 @@ target_include_directories(raylib SYSTEM INTERFACE ${raylib_SOURCE_DIR}/src)
 # --- Sources ---
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
+list(APPEND SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/systems/TrackingSystem.cpp")
 # --- Target ---
 add_executable(${PROJECT_NAME} ${SOURCES})
 
